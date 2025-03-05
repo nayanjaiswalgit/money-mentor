@@ -1,4 +1,3 @@
-import React from 'react';
 import { X, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 
 export interface UploadStatus {

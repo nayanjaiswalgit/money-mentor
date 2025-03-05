@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Filter, Download, Plus } from 'lucide-react';
 
 interface Transaction {
@@ -11,7 +11,7 @@ interface Transaction {
   account: string;
 }
 
-const transactions: Transaction[] = [
+const initialTransactions: Transaction[] = [
   {
     id: '1',
     date: '2024-03-05',
@@ -41,7 +41,76 @@ const transactions: Transaction[] = [
   },
 ];
 
+interface TransactionTableProps {
+  transactions: Transaction[];
+}
+
+const TransactionTable: React.FC<TransactionTableProps> = ({ transactions }) => {
+  return (
+    <table className="min-w-full divide-y divide-gray-200">
+      <thead className="bg-gray-50">
+        <tr>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Date
+          </th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Description
+          </th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Category
+          </th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Account
+          </th>
+          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Amount
+          </th>
+        </tr>
+      </thead>
+      <tbody className="bg-white divide-y divide-gray-200">
+        {transactions.map((transaction) => (
+          <tr key={transaction.id} className="hover:bg-gray-50">
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              {new Date(transaction.date).toLocaleDateString()}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+              {transaction.description}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              {transaction.category}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              {transaction.account}
+            </td>
+            <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium text-right ${
+              transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
+            }`}>
+              {transaction.type === 'credit' ? '+' : '-'}₹
+              {transaction.amount.toLocaleString()}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+};
+
 export function TransactionsPage() {
+  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+
+  const handleAddTransaction = () => {
+    const newTransaction: Transaction = {
+      id: Date.now().toString(),
+      date: new Date().toISOString().split('T')[0],
+      description: 'New Transaction',
+      category: 'Misc',
+      amount: 1000,
+      type: 'debit',
+      account: 'New Account',
+    };
+    setTransactions([...transactions, newTransaction]);
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -55,7 +124,10 @@ export function TransactionsPage() {
             <Download size={20} className="mr-2 text-gray-500" />
             Export
           </button>
-          <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          <button
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            onClick={handleAddTransaction}
+          >
             <Plus size={20} className="mr-2" />
             Add Transaction
           </button>
@@ -63,52 +135,9 @@ export function TransactionsPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Date
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Description
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Category
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Account
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Amount
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {transactions.map((transaction) => (
-              <tr key={transaction.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(transaction.date).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {transaction.description}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {transaction.category}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {transaction.account}
-                </td>
-                <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium text-right ${
-                  transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {transaction.type === 'credit' ? '+' : '-'}₹
-                  {transaction.amount.toLocaleString()}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <TransactionTable transactions={transactions} />
       </div>
     </div>
   );
 }
+

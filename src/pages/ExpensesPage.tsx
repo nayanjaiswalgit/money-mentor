@@ -1,7 +1,7 @@
 import React from 'react';
 import { Plus, Filter } from 'lucide-react';
-import { ExpenseCard } from '../components/expenses/ExpenseCard';
 import type { Expense } from '../types';
+import { ExpenseCard } from '../components/expenses/ExpenseCard';
 import { ChatExpense } from '../components/chat/ChatExpense';
 
 const expenses: Expense[] = [
@@ -43,7 +43,7 @@ export function ExpensesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {expenses.map((expense) => (
           <ExpenseCard
             key={expense.id}
@@ -51,8 +51,8 @@ export function ExpensesPage() {
             onEdit={(expense) => console.log('Edit expense:', expense)}
           />
         ))}
-      </div>
-      <ChatExpense/>
+      </div> */}
+      {/* <ChatExpense/> */}
     </div>
   );
 }

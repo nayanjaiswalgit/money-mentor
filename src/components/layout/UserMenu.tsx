@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { User, Settings, LogOut } from 'lucide-react';
-import { Dropdown } from '../ui/Dropdown';
-import { DropdownItem } from '../ui/DropdownItem';
+import { useState } from "react";
+import { User, Settings, LogOut } from "lucide-react";
+import { Dropdown } from "../ui/Dropdown";
+import { DropdownItem } from "../ui/DropdownItem";
 
 export function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,17 +21,22 @@ export function UserMenu() {
       </button>
 
       <Dropdown isOpen={isOpen} onClose={() => setIsOpen(false)}>
-        <DropdownItem onClick={() => console.log('Profile clicked')}>
+        <DropdownItem onClick={() => console.log("Profile clicked")}>
           Profile
         </DropdownItem>
-        <DropdownItem onClick={() => window.location.href = '/settings'}>
+        <DropdownItem onClick={() => (window.location.href = "/settings")}>
           <div className="flex items-center">
             <Settings size={16} className="mr-2" />
             Settings
           </div>
         </DropdownItem>
         <div className="border-t border-gray-100 my-1" />
-        <DropdownItem onClick={() => console.log('Logout clicked')}>
+        <DropdownItem
+          onClick={() => {
+            localStorage.removeItem("access");
+            window.location.href = "/login";
+          }}
+        >
           <div className="flex items-center text-red-600">
             <LogOut size={16} className="mr-2" />
             Logout

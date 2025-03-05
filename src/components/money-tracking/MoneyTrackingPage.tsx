@@ -1,16 +1,18 @@
-import React from 'react';
-import { useMoneyTracking } from './hooks/useMoneyTracking';
-import { TransactionForm } from './components/TransactionForm';
-import { TransactionList } from './components/TransactionList';
-import { BalanceOverview } from './components/BalanceOverview';
+import React from "react";
+import { useMoneyTracking } from "./hooks/useMoneyTracking";
+import { TransactionForm } from "./components/TransactionForm";
+import { TransactionList } from "./components/TransactionList";
+import { BalanceOverview } from "./components/BalanceOverview";
 
 export function MoneyTrackingPage() {
   const { transactions, totalIncome, totalExpenses, balance, addTransaction } = useMoneyTracking();
 
   return (
     <div className="py-6">
-      <h1 className="text-2xl font-semibold text-gray-900 mb-6">Money Tracking</h1>
-      
+      <h1 className="text-2xl font-semibold text-gray-900 mb-6">
+        Money Tracking
+      </h1>
+
       <BalanceOverview
         balance={balance}
         totalIncome={totalIncome}

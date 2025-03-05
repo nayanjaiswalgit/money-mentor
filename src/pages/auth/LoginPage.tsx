@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, AlertCircle } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useLoginMutation } from '../../app/api/login';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -10,16 +10,17 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const [login] = useLoginMutation();
 
   const from = location.state?.from?.pathname || '/dashboard';
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setError('');
       setLoading(true);
-      await login(email, password);
+      await login({username : email, password});
       navigate(from, { replace: true });
     } catch (err) {
       setError('Failed to sign in');
@@ -65,7 +66,7 @@ export function LoginPage() {
                 </div>
                 <input
                   id="email"
-                  type="email"
+                  type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

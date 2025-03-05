@@ -1,4 +1,3 @@
-import React from 'react';
 import { CreditCard, Wallet, Building2 } from 'lucide-react';
 import { AccountCard } from './AccountCard';
 
