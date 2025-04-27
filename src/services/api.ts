@@ -1,12 +1,11 @@
-import { Account, Card, Expense } from '../types';
-import { MonthlyAccountSummary } from '../types/MonthlyAccountSummary';
-import { fetchApi, handleApiResponse } from './apiClient';
+import { Account, Card, Transaction } from '../types';
+import { fetchApi } from './apiClient';
 
 // API endpoints
 const ENDPOINTS = {
   accounts: '/accounts',
   cards: '/cards',
-  expenses: '/expenses',
+  expenses: '/expenses/',
   monthlySummaries: '/monthly-summaries',
   monthlyBalances: '/monthly_balances/',
   incomes: '/incomes/',
@@ -75,26 +74,26 @@ export const api = {
     },
   },
   expenses: {
-    getAll: async (): Promise<Expense[]> => {
-      return fetchApi<Expense[]>(ENDPOINTS.expenses);
+    getAll: async (): Promise<Transaction[]> => {
+      return fetchApi<Transaction[]>(ENDPOINTS.expenses);
     },
-    getById: async (id: string): Promise<Expense> => {
-      return fetchApi<Expense>(`${ENDPOINTS.expenses}/${id}`);
+    getById: async (id: string): Promise<Transaction> => {
+      return fetchApi<Transaction>(`${ENDPOINTS.expenses}${id}/`);
     },
-    create: async (expense: Omit<Expense, 'id'>): Promise<Expense> => {
-      return fetchApi<Expense>(ENDPOINTS.expenses, {
+    create: async (expense: Omit<Transaction, 'id'>): Promise<Transaction> => {
+      return fetchApi<Transaction>(ENDPOINTS.expenses, {
         method: 'POST',
         body: JSON.stringify(expense),
       });
     },
-    update: async (id: string, expense: Partial<Expense>): Promise<Expense> => {
-      return fetchApi<Expense>(`${ENDPOINTS.expenses}/${id}`, {
+    update: async (id: string, expense: Partial<Transaction>): Promise<Transaction> => {
+      return fetchApi<Transaction>(`${ENDPOINTS.expenses}${id}/`, {
         method: 'PUT',
         body: JSON.stringify(expense),
       });
     },
     delete: async (id: string): Promise<void> => {
-      return fetchApi<void>(`${ENDPOINTS.expenses}/${id}`, {
+      return fetchApi<void>(`${ENDPOINTS.expenses}${id}/`, {
         method: 'DELETE',
       });
     },

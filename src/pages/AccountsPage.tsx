@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { AccountsList } from '../components/accounts2/AccountsList';
-import { CardsList } from '../components/accounts2/CardsList';
 import { Tabs } from '../components/ui/Tabs';
 import { FileUploadModal } from '../components/upload/FileUploadModal';
 import { UploadProgress } from '../components/upload/UploadProgress';
 import { useFileUpload } from '../hooks/useFileUpload';
-import { accounts, cards } from '../data/accounts';
+import { useGetAccountQuery } from '../app/api/accountApi';
 import {AddAccountModal} from "../components/accounts/forms/AddAccountModal";
 
 const tabs = [
@@ -31,8 +30,10 @@ const handleAddAccount = (data: any) => {
   
   const { uploads, uploadFiles, dismissUpload } = useFileUpload();
 
-  const handleUpload = (accountId: string, files: FileList) => {
-    const account = accounts.find(a => a.id === accountId);
+  const { data: accountsData, isLoading: accountsLoading, error: accountsError } = useGetAccountQuery({});
+
+  const handleUpload = (accountId: string) => {
+    const account = accountsData?.results.find(a => a.id === accountId);
     if (account) {
       setUploadModalState({
         isOpen: true,
@@ -53,7 +54,10 @@ const handleAddAccount = (data: any) => {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Accounts & Cards</h1>
-        <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+        <button
+          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          onClick={() => setShowModal(true)}
+        >
           <Plus size={20} className="mr-2" />
           Add {activeTab === 'accounts' ? 'Account' : 'Card'}
         </button>
@@ -66,15 +70,24 @@ const handleAddAccount = (data: any) => {
       />
 
       <div className="mt-6">
-        {activeTab === 'accounts' ? (
+        {accountsLoading ? (
+          <div>Loading accounts...</div>
+        ) : accountsError ? (
+          <div>Error loading accounts</div>
+        ) : (
           <AccountsList 
-            accounts={accounts}
+            accounts={accountsData || []}
             onUpload={handleUpload}
           />
-        ) : (
-          <CardsList cards={cards} />
         )}
       </div>
+
+      {/* AddAccountModal: Show when showModal is true */}
+      <AddAccountModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSubmit={handleAddAccount}
+      />
 
       <FileUploadModal
         isOpen={uploadModalState.isOpen}
@@ -87,12 +100,6 @@ const handleAddAccount = (data: any) => {
         uploads={uploads}
         onDismiss={dismissUpload}
       />
-
-      <AddAccountModal
-      isOpen={showModal}
-      onClose={() => setShowModal(false)}
-      onSubmit={handleAddAccount}
-/>
     </div>
   );
 }

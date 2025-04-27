@@ -48,16 +48,17 @@ export function AccountCard({ account, onUpload }: AccountCardProps) {
           <Building2 className="text-blue-600" size={24} />
         </div>
         <div className="ml-4">
-          <h3 className="font-semibold text-gray-900">{account.name}</h3>
-          <p className="text-sm text-gray-500">{account.bankName}</p>
+          <h3 className="font-semibold text-gray-900">{account.account_name}</h3>
+          <p className="text-sm text-gray-500">{account.bank_name || ''}</p>
         </div>
       </div>
       <div className="mt-4">
         <p className="text-sm text-gray-500">Available Balance</p>
         <p className="text-2xl font-bold text-gray-900">
-          ₹{account.balance.toLocaleString()}
+          ₹{account?.balance?.toLocaleString()}
         </p>
       </div>
+      {/* If you want to show balance, add logic here if available from backend */}
     </div>
   );
 }

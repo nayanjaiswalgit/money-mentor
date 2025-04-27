@@ -1,4 +1,3 @@
-import React from 'react';
 import { AccountCard } from './AccountCard';
 import type { Account } from '../../types';
 

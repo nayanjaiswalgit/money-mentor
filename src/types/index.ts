@@ -3,10 +3,11 @@ export type AccountType = 'checking' | 'savings' | 'money_market';
 
 export interface Account {
   id: string;
-  name: string;
-  bankName: string;
+  account_name: string;
+  type: string;
+  bank_name?: string;
+  bank_image?: any;
   balance: number;
-  accountType: AccountType;
 }
 
 export interface Card {
@@ -18,20 +19,15 @@ export interface Card {
   spent: number;
 }
 
-export interface Expense {
+export interface Transaction {
   id: string;
+  user: string;
+  account: string;
+  amount: number;
+  is_credit: boolean;
   date: string;
   description: string;
-  amount: number;
-  category: string;
-  accountId: string; // which account/bank deducted from
-  paymentMethod?: string; // e.g., UPI, Card
-  recurring?: boolean;
-  frequency?: 'daily' | 'weekly' | 'monthly' | 'yearly';
-  notes?: string;
-  tags?: string[];
-  receipt?: string;
-  linkedStatementId?: string; // For reconciliation
+  expenses?: string[];
 }
 
 export interface ApiResponse<T> {

@@ -20,7 +20,6 @@ export function AccountsList() {
         return Building2;
     }
   };
-
   const renderAccount = (account: Account) => (
     <StatsCard
       key={account.id}

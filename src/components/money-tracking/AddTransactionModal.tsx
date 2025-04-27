@@ -1,22 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Calendar, DollarSign, User } from 'lucide-react';
+import { api } from '../../services/api';
+import type { Transaction, Account } from '../../types';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  onAdd: (tx: Omit<Transaction, 'id'>) => Promise<void>;
 }
 
-export function AddTransactionModal({ isOpen, onClose }: Props) {
-  const [type, setType] = useState<'lend' | 'borrow'>('lend');
-  const [amount, setAmount] = useState('');
-  const [person, setPerson] = useState('');
-  const [description, setDescription] = useState('');
-  const [dueDate, setDueDate] = useState('');
+export function AddTransactionModal({ isOpen, onClose, onAdd }: Props) {
+  const [form, setForm] = useState<Omit<Transaction, 'id'>>({
+    user: '',
+    account: '',
+    amount: 0,
+    is_credit: false,
+    date: new Date().toISOString().slice(0, 10),
+    description: '',
+    expenses: [],
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [accounts, setAccounts] = useState<Account[]>([]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    api.accounts.getAll().then(setAccounts);
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    if (type === 'checkbox') {
+      setForm((prev) => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle transaction submission
-    onClose();
+    setLoading(true);
+    setError(null);
+    try {
+      await onAdd(form);
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Failed to add transaction.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -33,31 +64,13 @@ export function AddTransactionModal({ isOpen, onClose }: Props) {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setType('lend')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                  type === 'lend'
-                    ? 'bg-green-50 text-green-700 border-2 border-green-500'
-                    : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100'
-                }`}
-              >
-                Lending Money
-              </button>
-              <button
-                type="button"
-                onClick={() => setType('borrow')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                  type === 'borrow'
-                    ? 'bg-red-50 text-red-700 border-2 border-red-500'
-                    : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100'
-                }`}
-              >
-                Borrowing Money
-              </button>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Type</label>
+              <select name="is_credit" value={form.is_credit ? 'credit' : 'debit'} onChange={e => setForm(prev => ({ ...prev, is_credit: e.target.value === 'credit' }))} className="block w-full rounded-md border-gray-300 focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="debit">Debit</option>
+                <option value="credit">Credit</option>
+              </select>
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700">Amount</label>
               <div className="mt-1 relative rounded-md shadow-sm">
@@ -66,8 +79,9 @@ export function AddTransactionModal({ isOpen, onClose }: Props) {
                 </div>
                 <input
                   type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  name="amount"
+                  value={form.amount}
+                  onChange={handleChange}
                   className="pl-10 block w-full rounded-md border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="0.00"
                   step="0.01"
@@ -75,63 +89,62 @@ export function AddTransactionModal({ isOpen, onClose }: Props) {
                 />
               </div>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700">Person</label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
-                  <User className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  value={person}
-                  onChange={(e) => setPerson(e.target.value)}
-                  className="pl-10 block w-full rounded-md border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Enter name"
-                  required
-                />
-              </div>
+              <label className="block text-sm font-medium text-gray-700">Account</label>
+              <select
+                name="account"
+                value={form.account}
+                onChange={handleChange}
+                className="block w-full rounded-md border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
+                required
+              >
+                <option value="">Select account</option>
+                {accounts.map((acc) => (
+                  <option key={acc.id} value={acc.id}>{acc.account_name}</option>
+                ))}
+              </select>
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700">Description</label>
               <div className="mt-1">
                 <input
                   type="text"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
                   className="block w-full rounded-md border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="What's this for?"
                   required
                 />
               </div>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700">Due Date</label>
+              <label className="block text-sm font-medium text-gray-700">Date</label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
                   <Calendar className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
                   type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
+                  name="date"
+                  value={form.date}
+                  onChange={handleChange}
                   className="pl-10 block w-full rounded-md border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
                   required
                 />
               </div>
             </div>
-
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Expenses (IDs, comma separated)</label>
+              <input type="text" name="expenses" value={form.expenses?.join(',') || ''} onChange={e => setForm(prev => ({ ...prev, expenses: e.target.value.split(',').map(v => v.trim()).filter(Boolean) }))} className="w-full border rounded px-3 py-2" />
+            </div>
+            {error && <div className="text-red-600 text-sm">{error}</div>}
             <button
               type="submit"
-              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
-                type === 'lend'
-                  ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-red-600 hover:bg-red-700'
-              }`}
+              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700`}
+              disabled={loading}
             >
-              Add {type === 'lend' ? 'Lending' : 'Borrowing'} Transaction
+              {loading ? 'Adding...' : 'Add Transaction'}
             </button>
           </form>
         </div>

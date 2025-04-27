@@ -1,10 +1,10 @@
-import { useState, useCallback } from 'react';
-import type { Expense } from '../types';
+import { useCallback, useState } from 'react';
 import { api } from '../services/api';
+import type { Transaction } from '../types';
 
 export function useExpenses() {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [expenses, setExpenses] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchExpenses = useCallback(async () => {
@@ -21,13 +21,7 @@ export function useExpenses() {
     }
   }, []);
 
-  const addExpense = useCallback(async (expense: Omit<Expense, 'id'> & {
-    accountId: string;
-    paymentMethod: string;
-    notes?: string;
-    tags?: string[];
-    linkedStatementId?: string;
-  }) => {
+  const addExpense = useCallback(async (expense: Omit<Transaction, 'id'>) => {
     try {
       const newExpense = await api.expenses.create(expense);
       setExpenses(prev => [...prev, newExpense]);
@@ -38,7 +32,7 @@ export function useExpenses() {
     }
   }, []);
 
-  const updateExpense = useCallback(async (id: string, expense: Partial<Expense>) => {
+  const updateExpense = useCallback(async (id: string, expense: Partial<Transaction>) => {
     try {
       const updatedExpense = await api.expenses.update(id, expense);
       setExpenses(prev => prev.map(exp => exp.id === id ? updatedExpense : exp));
@@ -68,4 +62,4 @@ export function useExpenses() {
     updateExpense,
     deleteExpense,
   };
-} 
+}
