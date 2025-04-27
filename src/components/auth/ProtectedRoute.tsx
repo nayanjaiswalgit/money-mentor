@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useGetUserProfileQuery } from '../../app/api/userApi';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { data: user, isLoading } = useGetUserProfileQuery();
+  const { data: user, isLoading } = useGetUserProfileQuery({});
   const location = useLocation();
 
   if (isLoading) {

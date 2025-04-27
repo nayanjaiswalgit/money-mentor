@@ -1,38 +1,24 @@
 import React from 'react';
 import { Users, Plus, DollarSign } from 'lucide-react';
 
-interface Group {
-  id: string;
-  name: string;
-  members: string[];
-  totalExpenses: number;
-  yourShare: number;
-  youOwe: number;
-  youAreOwed: number;
-}
+// interface Group {
+//   id: string;
+//   name: string;
+//   members: string[];
+//   totalExpenses: number;
+//   yourShare: number;
+//   youOwe: number;
+//   youAreOwed: number;
+// }
 
-const groups: Group[] = [
-  {
-    id: '1',
-    name: 'Roommates',
-    members: ['You', 'Alex', 'Sarah', 'Mike'],
-    totalExpenses: 12000,
-    yourShare: 3000,
-    youOwe: 1500,
-    youAreOwed: 0,
-  },
-  {
-    id: '2',
-    name: 'Trip to Goa',
-    members: ['You', 'John', 'Emma', 'David', 'Lisa'],
-    totalExpenses: 25000,
-    yourShare: 5000,
-    youOwe: 0,
-    youAreOwed: 2000,
-  },
-];
+// const groups: Group[] = [];
 
 export function GroupsPage() {
+  // const { data: groups = [], isLoading, error } = useGroups();
+
+  // if (isLoading) return <div className="p-4">Loading groups...</div>;
+  // if (error) return <div className="p-4 text-red-600">Failed to load groups.</div>;
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -43,7 +29,7 @@ export function GroupsPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {groups.map((group) => (
           <div key={group.id} className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
@@ -89,7 +75,8 @@ export function GroupsPage() {
             </button>
           </div>
         ))}
-      </div>
+      </div> */}
+      <div className="text-gray-500">Connect to API for groups data.</div>
     </div>
   );
 }

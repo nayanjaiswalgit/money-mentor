@@ -1,34 +1,22 @@
 import React from 'react';
 import { Link as LinkIcon, AlertCircle } from 'lucide-react';
 import { Transaction } from './types';
+import { useExpenses } from '../../hooks/useExpenses';
 
 interface Props {
   selectedTransaction: Transaction;
   onMatch: (expense: any) => void;
 }
 
-const mockMatchedExpenses = [
-  {
-    id: 'exp1',
-    description: 'Monthly Groceries',
-    amount: 156.78,
-    date: '2024-03-15',
-    category: 'groceries'
-  },
-  {
-    id: 'exp2',
-    description: 'Shopping',
-    amount: 45.90,
-    date: '2024-03-14',
-    category: 'shopping'
-  }
-];
-
 export function MatchedExpensesList({ selectedTransaction, onMatch }: Props) {
-  const filteredExpenses = mockMatchedExpenses.filter(expense => 
+  const { expenses, loading, error } = useExpenses();
+  const filteredExpenses = expenses.filter(expense => 
     Math.abs(expense.amount) === Math.abs(selectedTransaction.amount) ||
     expense.date === selectedTransaction.date
   );
+
+  if (loading) return <div className="p-4">Loading expenses...</div>;
+  if (error) return <div className="p-4 text-red-600">Failed to load expenses.</div>;
 
   return (
     <div>

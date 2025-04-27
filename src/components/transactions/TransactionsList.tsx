@@ -1,47 +1,30 @@
 import React from 'react';
 import { ArrowUpRight, ArrowDownRight, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Transaction } from './types';
-
-const mockTransactions: Transaction[] = [
-  {
-    id: '1',
-    date: '2024-03-15',
-    description: 'Grocery Store Purchase',
-    amount: -156.78,
-    category: 'groceries',
-    matchedExpense: {
-      id: 'exp1',
-      description: 'Monthly Groceries',
-      amount: 156.78,
-      date: '2024-03-15',
-      category: 'groceries'
-    }
-  },
-  {
-    id: '2',
-    date: '2024-03-14',
-    description: 'Restaurant Payment',
-    amount: -45.90,
-    category: 'dining',
-    matchedExpense: null
-  }
-];
+import { useGetTransactionsQuery } from '../../app/api/transactionsApi';
 
 interface Props {
   statementId?: string;
 }
 
 export function TransactionsList({ statementId }: Props) {
+  const { data: transactions = [], isLoading, error } = useGetTransactionsQuery();
+
+  if (isLoading) {
+    return <div className="p-4">Loading transactions...</div>;
+  }
+  if (error) {
+    return <div className="p-4 text-red-600">Failed to load transactions.</div>;
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-sm">
       <div className="divide-y divide-gray-200">
-        {mockTransactions.map((transaction) => (
+        {transactions.map((transaction: Transaction) => (
           <div key={transaction.id} className="p-4 hover:bg-gray-50">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
-                <div className={`p-2 rounded-lg ${
-                  transaction.amount < 0 ? 'bg-red-50' : 'bg-green-50'
-                }`}>
+                <div className={`p-2 rounded-lg ${transaction.amount < 0 ? 'bg-red-50' : 'bg-green-50'}`}>
                   {transaction.amount < 0 ? (
                     <ArrowDownRight className="h-5 w-5 text-red-600" />
                   ) : (
@@ -57,14 +40,10 @@ export function TransactionsList({ statementId }: Props) {
                   </p>
                 </div>
               </div>
-              
               <div className="flex items-center space-x-6">
-                <p className={`text-sm font-semibold ${
-                  transaction.amount < 0 ? 'text-red-600' : 'text-green-600'
-                }`}>
+                <p className={`text-sm font-semibold ${transaction.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
                   ${Math.abs(transaction.amount).toFixed(2)}
                 </p>
-                
                 {transaction.matchedExpense ? (
                   <div className="flex items-center text-green-600">
                     <CheckCircle2 className="h-5 w-5 mr-1" />
@@ -77,7 +56,6 @@ export function TransactionsList({ statementId }: Props) {
                 )}
               </div>
             </div>
-            
             {transaction.matchedExpense && (
               <div className="mt-2 ml-11 flex items-center text-sm text-gray-500">
                 <AlertCircle className="h-4 w-4 mr-1" />

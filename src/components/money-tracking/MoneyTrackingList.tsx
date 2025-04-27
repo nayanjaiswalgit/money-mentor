@@ -1,37 +1,19 @@
 import React, { useState } from 'react';
 import { ArrowUpRight, ArrowDownRight, MoreVertical } from 'lucide-react';
 import { Transaction } from './types';
-
-const mockTransactions: Transaction[] = [
-  {
-    id: '1',
-    type: 'lend',
-    amount: 500,
-    person: 'John Doe',
-    date: '2024-03-15',
-    dueDate: '2024-04-15',
-    description: 'Emergency fund',
-    status: 'pending'
-  },
-  {
-    id: '2',
-    type: 'borrow',
-    amount: 200,
-    person: 'Jane Smith',
-    date: '2024-03-10',
-    dueDate: '2024-03-25',
-    description: 'Lunch payment',
-    status: 'pending'
-  }
-];
+import { useGetTransactionsQuery } from '../../app/api/transactionsApi';
 
 export function MoneyTrackingList() {
   const [filter, setFilter] = useState<'all' | 'lent' | 'borrowed'>('all');
+  const { data: transactions = [], isLoading, error } = useGetTransactionsQuery();
 
-  const filteredTransactions = mockTransactions.filter(transaction => {
+  const filteredTransactions = transactions.filter((transaction: Transaction) => {
     if (filter === 'all') return true;
     return filter === 'lent' ? transaction.type === 'lend' : transaction.type === 'borrow';
   });
+
+  if (isLoading) return <div className="p-4">Loading transactions...</div>;
+  if (error) return <div className="p-4 text-red-600">Failed to load transactions.</div>;
 
   return (
     <div className="bg-white rounded-lg shadow-sm">
@@ -40,12 +22,12 @@ export function MoneyTrackingList() {
           {(['all', 'lent', 'borrowed'] as const).map((type) => (
             <button
               key={type}
-              onClick={() => setFilter(type)}
               className={`px-3 py-1 rounded-md text-sm font-medium ${
                 filter === type
                   ? 'bg-indigo-50 text-indigo-700'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
+              onClick={() => setFilter(type)}
             >
               {type.charAt(0).toUpperCase() + type.slice(1)}
             </button>
@@ -54,7 +36,7 @@ export function MoneyTrackingList() {
       </div>
 
       <div className="divide-y divide-gray-200">
-        {filteredTransactions.map((transaction) => (
+        {filteredTransactions.map((transaction: Transaction) => (
           <div key={transaction.id} className="p-4 hover:bg-gray-50">
             <div className="flex items-center justify-between">
               <div className="flex items-center">

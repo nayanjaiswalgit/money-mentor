@@ -11,36 +11,6 @@ interface Transaction {
   account: string;
 }
 
-const initialTransactions: Transaction[] = [
-  {
-    id: '1',
-    date: '2024-03-05',
-    description: 'Salary Credit',
-    category: 'Income',
-    amount: 50000,
-    type: 'credit',
-    account: 'HDFC Bank',
-  },
-  {
-    id: '2',
-    date: '2024-03-04',
-    description: 'Grocery Shopping',
-    category: 'Food',
-    amount: 2500,
-    type: 'debit',
-    account: 'ICICI Bank',
-  },
-  {
-    id: '3',
-    date: '2024-03-03',
-    description: 'Netflix Subscription',
-    category: 'Entertainment',
-    amount: 649,
-    type: 'debit',
-    account: 'HDFC Credit Card',
-  },
-];
-
 interface TransactionTableProps {
   transactions: Transaction[];
 }
@@ -96,7 +66,7 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions }) => 
 };
 
 export function TransactionsPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   const handleAddTransaction = () => {
     const newTransaction: Transaction = {
@@ -115,29 +85,13 @@ export function TransactionsPage() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
-        <div className="flex space-x-3">
-          <button className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-            <Filter size={20} className="mr-2 text-gray-500" />
-            Filter
-          </button>
-          <button className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-            <Download size={20} className="mr-2 text-gray-500" />
-            Export
-          </button>
-          <button
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            onClick={handleAddTransaction}
-          >
-            <Plus size={20} className="mr-2" />
-            Add Transaction
-          </button>
-        </div>
+        <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          <Plus size={20} className="mr-2" />
+          Add Transaction
+        </button>
       </div>
-
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <TransactionTable transactions={transactions} />
-      </div>
+      {/* <TransactionTable transactions={transactions} /> */}
+      <div className="text-gray-500">Connect to API for transactions data.</div>
     </div>
   );
 }
-

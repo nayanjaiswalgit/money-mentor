@@ -1,4 +1,3 @@
-import React from 'react';
 import { AccountsList } from './AccountsList';
 import { AddAccountButton } from './AddAccountButton';
 import { AccountStats } from './AccountStats';

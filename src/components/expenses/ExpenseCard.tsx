@@ -1,13 +1,14 @@
 import React from 'react';
-import { Receipt, Users, CalendarClock } from 'lucide-react';
+import { Receipt, Users, CalendarClock, Trash2 } from 'lucide-react';
 import type { Expense } from '../../types';
 
 interface ExpenseCardProps {
   expense: Expense;
   onEdit?: (expense: Expense) => void;
+  onDelete?: () => void;
 }
 
-export function ExpenseCard({ expense, onEdit }: ExpenseCardProps) {
+export function ExpenseCard({ expense, onEdit, onDelete }: ExpenseCardProps) {
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
       <div className="flex justify-between items-start mb-4">
@@ -41,14 +42,24 @@ export function ExpenseCard({ expense, onEdit }: ExpenseCardProps) {
         )}
       </div>
       
-      {onEdit && (
-        <button
-          onClick={() => onEdit(expense)}
-          className="mt-4 w-full px-4 py-2 text-sm text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50"
-        >
-          Edit Expense
-        </button>
-      )}
+      <div className="mt-4 flex space-x-2">
+        {onEdit && (
+          <button
+            onClick={() => onEdit(expense)}
+            className="flex-1 px-4 py-2 text-sm text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50"
+          >
+            Edit Expense
+          </button>
+        )}
+        {onDelete && (
+          <button
+            onClick={onDelete}
+            className="px-4 py-2 text-sm text-red-600 border border-red-600 rounded-lg hover:bg-red-50"
+          >
+            <Trash2 size={16} />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

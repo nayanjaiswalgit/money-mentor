@@ -1,4 +1,3 @@
-import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { LoginPage } from "./pages/auth/LoginPage";
@@ -17,6 +16,7 @@ import { TransactionsPage as TransactionsPageDetail } from "./components/transac
 import { ExpensesPage } from "./pages/ExpensesPage";
 import { TransactionsPage } from "./pages/TransactionsPage";
 import DashboardPage from "./pages/DashboardPage";
+import MonthlySummaryPage from "./pages/MonthlySummaryPage";
 import { Provider } from "react-redux";
 import store from "./app/store";
 
@@ -34,6 +34,7 @@ function App() {
                   <div className="min-h-screen bg-gray-100">
                     <Header />
                     <Sidebar />
+                    <ProtectedRoute >
                     <main className="lg:pl-64">
                       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <Routes>
@@ -74,9 +75,14 @@ function App() {
                             element={<TransactionsPage />}
                           />
                           <Route path="/reports" element={<ReportsPage />} />
+                          <Route
+                            path="/monthly-summary"
+                            element={<MonthlySummaryPage />}
+                          />
                         </Routes>
                       </div>
                     </main>
+                    </ProtectedRoute >
                   </div>
               }
             />
@@ -86,4 +92,3 @@ function App() {
   );
 }
 export default App;
-

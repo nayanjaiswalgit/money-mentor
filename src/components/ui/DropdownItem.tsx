@@ -3,6 +3,7 @@ import React from 'react';
 interface DropdownItemProps {
   children: React.ReactNode;
   onClick?: () => void;
+  className?: string;
 }
 
 export function DropdownItem({ children, onClick }: DropdownItemProps) {
