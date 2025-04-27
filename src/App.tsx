@@ -17,6 +17,7 @@ import { ExpensesPage } from "./pages/ExpensesPage";
 import { TransactionsPage } from "./pages/TransactionsPage";
 import DashboardPage from "./pages/DashboardPage";
 import MonthlySummaryPage from "./pages/MonthlySummaryPage";
+import SheetUploadPage from "./pages/SheetUploadPage";
 import { Provider } from "react-redux";
 import store from "./app/store";
 
@@ -78,6 +79,10 @@ function App() {
                           <Route
                             path="/monthly-summary"
                             element={<MonthlySummaryPage />}
+                          />
+                          <Route
+                            path="/sheet-upload"
+                            element={<SheetUploadPage />}
                           />
                         </Routes>
                       </div>

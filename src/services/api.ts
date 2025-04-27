@@ -115,4 +115,30 @@ export const api = {
     update: async (id: string, data: any) => fetchApi(`${ENDPOINTS.incomes}${id}/`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: async (id: string) => fetchApi(`${ENDPOINTS.incomes}${id}/`, { method: 'DELETE' }),
   },
+  statements: {
+    upload: async (file: File): Promise<void> => {
+      const formData = new FormData();
+      formData.append('pdf_file', file); // Backend expects 'pdf_file' for /api/pdf-parser/
+      const response = await fetch('/api/pdf-parser/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      let errorMsg = 'Upload failed';
+      if (!response.ok) {
+        try {
+          const data = await response.json();
+          errorMsg = data?.error || data?.message || errorMsg;
+        } catch (e) {
+          // fallback: try text
+          try {
+            errorMsg = await response.text();
+          } catch { /* ignore */ }
+        }
+        throw new Error(errorMsg);
+      }
+    },
+  },
 };

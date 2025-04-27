@@ -35,14 +35,26 @@ export async function fetchApi<T>(
   // Retrieve token from localStorage
   const token = localStorage.getItem("access");
 
+  // Only set Content-Type if not uploading FormData
+  let mergedHeaders = {
+    ...API_CONFIG.headers,
+    ...options.headers,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+  // Filter to only string key-value pairs
+  let headers: Record<string, string> = Object.fromEntries(
+    Object.entries(mergedHeaders).filter(
+      ([k, v]) => typeof k === 'string' && typeof v === 'string'
+    )
+  );
+  if (options.body instanceof FormData) {
+    delete headers['Content-Type'];
+  }
+
   try {
     const response = await fetch(url, {
       ...options,
-      headers: {
-        ...API_CONFIG.headers,
-        ...options.headers,
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
+      headers,
       signal: controller.signal,
     });
     
