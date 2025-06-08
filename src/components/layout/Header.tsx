@@ -1,12 +1,16 @@
 import { Bell } from 'lucide-react';
 import { UserMenu } from './UserMenu';
 
-export function Header() {
+interface HeaderProps {
+  onHamburgerClick: () => void;
+}
+
+export function Header({ onHamburgerClick }: HeaderProps) {
   return (
     <header className="bg-white border-b border-gray-200">
       <div className="flex items-center justify-between px-6 py-4">
         <div className="md:hidden">
-          <button className="text-gray-600 hover:text-gray-900">
+          <button className="text-gray-600 hover:text-gray-900" onClick={onHamburgerClick} aria-label="Open sidebar">
             <svg
               className="h-6 w-6"
               fill="none"
