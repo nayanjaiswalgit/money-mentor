@@ -39,9 +39,9 @@ export const getCSRFToken = async (): Promise<string> => {
     console.log('[CSRF] Already fetching token, waiting...');
     // Wait for up to 5 seconds for the token
     for (let i = 0; i < 50; i++) {
-      if (csrfToken) {
-        return csrfToken;
-      }
+  if (csrfToken) {
+    return csrfToken;
+  }
       await new Promise(resolve => setTimeout(resolve, 100));
     }
     throw new Error('Timeout waiting for CSRF token');
@@ -71,12 +71,12 @@ export const getCSRFToken = async (): Promise<string> => {
         'Accept': 'application/json',
       },
     });
-
+    
     if (!response.ok) {
       console.error('[CSRF] Failed to get CSRF token:', response.status, response.statusText);
       throw new Error(`Failed to get CSRF token: ${response.status} ${response.statusText}`);
     }
-
+    
     const data = await response.json();
     const token = data.csrfToken;
 
@@ -137,23 +137,23 @@ export const fetchWithCSRF = async (url: string, options: RequestInit = {}): Pro
       credentials: 'include',
       headers,
     });
-
+    
     // If we get a 403 Forbidden, it might be due to an invalid CSRF token
     if (response.status === 403) {
       console.log('[CSRF] Received 403 Forbidden, clearing CSRF token and retrying...');
       clearCSRFToken();
       try {
-        const newToken = await getCSRFToken();
-        if (newToken) {
+      const newToken = await getCSRFToken();
+      if (newToken) {
           console.log('[CSRF] Retrying request with new CSRF token');
-          return fetchWithCSRF(url, options);
+        return fetchWithCSRF(url, options);
         }
       } catch (error) {
         console.error('[CSRF] Failed to get new CSRF token for retry:', error);
         throw error;
       }
     }
-
+    
     return response;
   } catch (error) {
     console.error('[CSRF] Error in fetchWithCSRF:', error);

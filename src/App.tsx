@@ -1,35 +1,25 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { MainLayout } from './components/layout/MainLayout';
-import { ThemeProvider } from './providers/ThemeProvider';
-import { routes } from './config/routes';
+import React, { Suspense } from 'react';
+import { BrowserRouter as Router, Routes, Route, useRoutes } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import store from './app/store';
+import { routes } from './config/routes.tsx';
+import { useAuth } from './hooks/useAuth';
+import LoadingSpinner from './components/LoadingSpinner';
 
-function App() {
-  return (
-    <ThemeProvider>
-      <Router>
-        <MainLayout>
-          <Routes>
-            {routes.map(({ path, element: Element, isPublic, requiredFeature, requiredRole }) => (
-              <Route
-                key={path}
-                path={path}
-                element={
-                  isPublic ? (
-                    <Element />
-                  ) : (
-                    <ProtectedRoute requiredFeature={requiredFeature} requiredRole={requiredRole}>
-                      <Element />
-                    </ProtectedRoute>
-                  )
-                }
-              />
-            ))}
-          </Routes>
-        </MainLayout>
-      </Router>
-    </ThemeProvider>
-  );
+function AppRoutes() {
+  const { isAuthenticated } = useAuth();
+  const element = useRoutes(routes);
+  return element;
 }
 
-export default App;
+export default function App() {
+  return (
+    <Provider store={store}>
+      <Router>
+        <Suspense fallback={<LoadingSpinner />}>
+          <AppRoutes />
+        </Suspense>
+      </Router>
+    </Provider>
+  );
+}

@@ -71,66 +71,66 @@ const authSlice = createSlice({
     builder
       // Login
       .addCase(login.pending, (state) => {
-        state.loading = true;
-        state.error = null;
+      state.loading = true;
+      state.error = null;
       })
       .addCase(login.fulfilled, (state, action) => {
-        state.loading = false;
+      state.loading = false;
         state.isAuthenticated = true;
         state.user = action.payload;
         state.error = null;
       })
       .addCase(login.rejected, (state, action) => {
-        state.loading = false;
+      state.loading = false;
         state.error = action.payload as string;
       })
       // Register
       .addCase(registerUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
+      state.loading = true;
+      state.error = null;
       })
       .addCase(registerUser.fulfilled, (state, action) => {
-        state.loading = false;
+      state.loading = false;
         state.isAuthenticated = true;
-        state.user = action.payload;
-        state.error = null;
+      state.user = action.payload;
+      state.error = null;
       })
       .addCase(registerUser.rejected, (state, action) => {
-        state.loading = false;
+      state.loading = false;
         state.error = action.payload as string;
       })
       // Logout
       .addCase(logout.pending, (state) => {
-        state.loading = true;
+      state.loading = true;
       })
       .addCase(logout.fulfilled, (state) => {
-        state.loading = false;
-        state.isAuthenticated = false;
-        state.user = null;
-        state.error = null;
+      state.loading = false;
+      state.isAuthenticated = false;
+      state.user = null;
+      state.error = null;
       })
       .addCase(logout.rejected, (state, action) => {
-        state.loading = false;
+      state.loading = false;
         state.error = action.payload as string;
       })
       // Check Auth Status
       .addCase(checkAuthStatus.pending, (state) => {
-        state.loading = true;
+      state.loading = true;
       })
       .addCase(checkAuthStatus.fulfilled, (state, action) => {
-        state.loading = false;
+      state.loading = false;
         state.initialized = true;
         state.isAuthenticated = !!action.payload;
-        state.user = action.payload;
-        state.error = null;
+      state.user = action.payload;
+      state.error = null;
       })
       .addCase(checkAuthStatus.rejected, (state, action) => {
-        state.loading = false;
+      state.loading = false;
         state.initialized = true;
-        state.isAuthenticated = false;
-        state.user = null;
+      state.isAuthenticated = false;
+      state.user = null;
         state.error = action.payload as string;
-      });
+    });
   }
 });
 

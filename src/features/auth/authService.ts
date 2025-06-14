@@ -140,31 +140,31 @@ class AuthService {
     return response;
   }
 
-  /**
-   * Check if the user is authenticated by making a request to the server
-   * This will automatically handle the session cookie
-   */
+/**
+ * Check if the user is authenticated by making a request to the server
+ * This will automatically handle the session cookie
+ */
   async checkAuthStatus(): Promise<{ isAuthenticated: boolean; user: User | null }> {
-    try {
+  try {
       const headers = await this.getHeaders();
       const response = await fetch(`${API_URL}/api/auth/me/`, {
-        method: 'GET',
+      method: 'GET',
         headers,
         credentials: 'include',
-      });
+    });
 
-      if (response.ok) {
-        const user = await response.json();
-        if (isUser(user)) {
-          return { isAuthenticated: true, user };
-        }
+    if (response.ok) {
+      const user = await response.json();
+      if (isUser(user)) {
+        return { isAuthenticated: true, user };
       }
-      
-      return { isAuthenticated: false, user: null };
-    } catch (error) {
-      console.error('Error checking auth status:', error);
-      return { isAuthenticated: false, user: null };
     }
+    
+    return { isAuthenticated: false, user: null };
+  } catch (error) {
+    console.error('Error checking auth status:', error);
+    return { isAuthenticated: false, user: null };
+  }
   }
 
   /**
@@ -215,7 +215,7 @@ class AuthService {
    */
   async logout(): Promise<void> {
     const response = await this.fetchWithCsrf(`${API_URL}/auth/logout/`, {
-      method: 'POST',
+        method: 'POST',
     });
 
     if (!response.ok) {
