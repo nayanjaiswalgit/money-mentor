@@ -24,7 +24,7 @@ const config: AppConfig = {
   appName: 'Expense Tracker',
   version: '1.0.0',
   environment: process.env.NODE_ENV as AppConfig['environment'],
-  apiBaseUrl: process.env.VITE_API_BASE_URL || 'http://localhost:3000',
+  apiBaseUrl:  'http://localhost:8000',
   features,
   routes,
   theme: {
