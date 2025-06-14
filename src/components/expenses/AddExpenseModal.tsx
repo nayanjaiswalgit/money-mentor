@@ -1,36 +1,46 @@
 import React, { useState, useEffect } from 'react';
 import type { Transaction, Account } from '../../types';
-import { api } from '../../services/api';
+import api, { accountAPI, transactionAPI } from '../../services/api';
 
 interface AddExpenseModalProps {
   onClose: () => void;
-  onAdd: (expense: Omit<Transaction, 'id'>) => Promise<void>;
-  initialValues?: Partial<Transaction>;
+  onAdd: (expense: Omit<Transaction, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  initialValues?: Partial<Omit<Transaction, 'userId' | 'createdAt' | 'updatedAt'>>;
 }
 
 export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onClose, onAdd, initialValues }) => {
-  const [form, setForm] = useState<Omit<Transaction, 'id'>>({
-    user: '',
-    account: '',
-    amount: 0,
-    is_credit: false,
-    date: new Date().toISOString().slice(0, 10),
-    description: '',
-    expenses: [],
-    ...(initialValues || {})
+  const [form, setForm] = useState<Omit<Transaction, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>({
+    accountId: initialValues?.accountId || '',
+    amount: initialValues?.amount || 0,
+    type: initialValues?.type || 'expense', // Explicitly type as 'expense' or 'income'
+    category: initialValues?.category || '',
+    description: initialValues?.description || '',
+    date: initialValues?.date || new Date().toISOString().slice(0, 10),
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
 
   useEffect(() => {
-    api.accounts.getAll().then(setAccounts);
+    const fetchAccounts = async () => {
+      try {
+        const response = await accountAPI.getAccounts();
+        setAccounts(response.data.results || []);
+      } catch (err) {
+        console.error('Failed to fetch accounts:', err);
+        setError('Failed to load accounts.');
+      }
+    };
+    fetchAccounts();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target;
-    if (type === 'checkbox') {
-      setForm((prev) => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
+    const { name, value } = e.target;
+    if (name === 'amount') {
+      setForm((prev) => ({ ...prev, [name]: parseFloat(value) }));
+    } else if (name === 'type') {
+      // Explicitly cast the value to the correct union type
+      setForm((prev) => ({ ...prev, [name]: value as 'income' | 'expense' }));
     } else {
       setForm((prev) => ({ ...prev, [name]: value }));
     }
@@ -41,9 +51,12 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onClose, onAdd
     setLoading(true);
     setError(null);
     try {
-      await onAdd(form);
+      // For adding/updating expenses, ensure type is 'expense'
+      const expensePayload = { ...form, type: 'expense' as 'expense' };
+      await onAdd(expensePayload);
+      onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to add expense.');
+      setError(err.message || 'Failed to save expense.');
     } finally {
       setLoading(false);
     }
@@ -74,20 +87,16 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onClose, onAdd
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Account</label>
-            <select name="account" value={form.account} onChange={handleChange} className="w-full border rounded px-3 py-2" required>
+            <select name="accountId" value={form.accountId} onChange={handleChange} className="w-full border rounded px-3 py-2" required>
               <option value="">Select account</option>
               {accounts.map((acc) => (
-                <option key={acc.id} value={acc.id}>{acc.account_name}</option>
+                <option key={acc.id} value={acc.id}>{acc.name}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Credit?</label>
-            <input type="checkbox" name="is_credit" checked={form.is_credit} onChange={handleChange} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Expenses (IDs, comma separated)</label>
-            <input type="text" name="expenses" value={form.expenses?.join(',') || ''} onChange={e => setForm(prev => ({ ...prev, expenses: e.target.value.split(',').map(v => v.trim()).filter(Boolean) }))} className="w-full border rounded px-3 py-2" />
+            <label className="block text-sm font-medium mb-1">Category</label>
+            <input type="text" name="category" value={form.category} onChange={handleChange} className="w-full border rounded px-3 py-2" required />
           </div>
           {error && <div className="text-red-600 text-sm">{error}</div>}
           <div className="flex justify-end">

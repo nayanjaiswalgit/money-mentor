@@ -1,144 +1,148 @@
+import axios from 'axios';
 import { Account, Card, Transaction } from '../types';
-import { fetchApi } from './apiClient';
 
-// API endpoints
-const ENDPOINTS = {
-  accounts: '/accounts',
-  cards: '/cards',
-  expenses: '/expenses/',
-  monthlySummaries: '/monthly-summaries',
-  monthlyBalances: '/monthly_balances/',
-  incomes: '/incomes/',
+const API_BASE_URL = import.meta.env.VITE_APP_API_URL || 'http://localhost:3000/api';
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add request interceptor for authentication
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Auth APIs
+export const authAPI = {
+  login: (credentials: { email: string; password: string }) =>
+    api.post('/auth/login', credentials),
+  register: (userData: { email: string; password: string; name: string }) =>
+    api.post('/auth/register', userData),
+  logout: () => api.post('/auth/logout'),
+  getCurrentUser: () => api.get('/auth/me'),
 };
 
-// --- Monthly Summaries ---
-export type MonthlyAccountSummary = {
-  id: string;
-  user: string;
-  account: string;
-  month: string; // YYYY-MM-DD
-  end_balance: string;
-  income: string;
-  created_at: string;
+// Account APIs
+export const accountAPI = {
+  connectBank: (bankData: any) => api.post('/accounts/connect-bank', bankData),
+  getAccounts: () => api.get('/accounts'),
+  getAccountById: (id: string) => api.get(`/accounts/${id}`),
+  disconnectAccount: (accountId: string) => api.delete(`/accounts/${accountId}`),
 };
 
-export const api = {
-  accounts: {
-    getAll: async (): Promise<Account[]> => {
-      return fetchApi<Account[]>(ENDPOINTS.accounts);
-    },
-    getById: async (id: string): Promise<Account> => {
-      return fetchApi<Account>(`${ENDPOINTS.accounts}/${id}`);
-    },
-    create: async (account: Omit<Account, 'id'>): Promise<Account> => {
-      return fetchApi<Account>(ENDPOINTS.accounts, {
-        method: 'POST',
-        body: JSON.stringify(account),
-      });
-    },
-    update: async (id: string, account: Partial<Account>): Promise<Account> => {
-      return fetchApi<Account>(`${ENDPOINTS.accounts}/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(account),
-      });
-    },
-    delete: async (id: string): Promise<void> => {
-      return fetchApi<void>(`${ENDPOINTS.accounts}/${id}`, {
-        method: 'DELETE',
-      });
-    },
+// Transaction APIs
+export const transactionAPI = {
+  getTransactions: (params?: { startDate?: string; endDate?: string; category?: string; type?: 'income' | 'expense' }) =>
+    api.get('/transactions', { params }),
+  createTransaction: (transactionData: any) => api.post('/transactions', transactionData),
+  updateTransaction: (id: string, transactionData: any) =>
+    api.put(`/transactions/${id}`, transactionData),
+  deleteTransaction: (id: string) => api.delete(`/transactions/${id}`),
+};
+
+// Budget APIs
+export const budgetAPI = {
+  getBudgets: () => api.get('/budgets'),
+  createBudget: (budgetData: any) => api.post('/budgets', budgetData),
+  updateBudget: (id: string, budgetData: any) => api.put(`/budgets/${id}`, budgetData),
+  deleteBudget: (id: string) => api.delete(`/budgets/${id}`),
+};
+
+// Category APIs
+export const categoryAPI = {
+  getCategories: () => api.get('/categories'),
+  createCategory: (categoryData: any) => api.post('/categories', categoryData),
+  updateCategory: (id: string, categoryData: any) => api.put(`/categories/${id}`, categoryData),
+  deleteCategory: (id: string) => api.delete(`/categories/${id}`),
+};
+
+// Report APIs
+export const reportAPI = {
+  getSpendingReport: (params: { startDate: string; endDate: string }) =>
+    api.get('/reports/spending', { params }),
+  getBudgetReport: (params: { startDate: string; endDate: string }) =>
+    api.get('/reports/budget', { params }),
+  getCategoryReport: (params: { startDate: string; endDate: string }) =>
+    api.get('/reports/category', { params }),
+};
+
+// Shared Expense APIs
+export const sharedExpenseAPI = {
+  getSharedExpenses: () => api.get('/shared-expenses'),
+  createSharedExpense: (expenseData: any) => api.post('/shared-expenses', expenseData),
+  updateSharedExpense: (id: string, expenseData: any) =>
+    api.put(`/shared-expenses/${id}`, expenseData),
+  deleteSharedExpense: (id: string) => api.delete(`/shared-expenses/${id}`),
+  settleExpense: (id: string) => api.post(`/shared-expenses/${id}/settle`),
+};
+
+// Invoice APIs
+export const invoiceAPI = {
+  getInvoices: () => api.get('/invoices'),
+  createInvoice: (invoiceData: any) => api.post('/invoices', invoiceData),
+  updateInvoice: (id: string, invoiceData: any) => api.put(`/invoices/${id}`, invoiceData),
+  deleteInvoice: (id: string) => api.delete(`/invoices/${id}`),
+  sendInvoice: (id: string) => api.post(`/invoices/${id}/send`),
+};
+
+// Statement Upload APIs
+export const statementAPI = {
+  uploadStatement: (formData: FormData) =>
+    api.post('/statements/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }),
+  getStatements: () => api.get('/statements'),
+  deleteStatement: (id: string) => api.delete(`/statements/${id}`),
+};
+
+// Gmail Integration APIs
+export const gmailAPI = {
+  connectGmail: () => api.post('/gmail/connect'),
+  disconnectGmail: () => api.post('/gmail/disconnect'),
+  syncGmail: () => api.post('/gmail/sync'),
+  getGmailStatus: () => api.get('/gmail/status'),
+};
+
+// Monthly Balance APIs
+export const monthlyBalanceAPI = {
+  getMonthlyBalances: () => api.get('/monthly-balances'),
+  createMonthlyBalance: (balanceData: any) => api.post('/monthly-balances', balanceData),
+  updateMonthlyBalance: (id: string, balanceData: any) =>
+    api.put(`/monthly-balances/${id}`, balanceData),
+  deleteMonthlyBalance: (id: string) => api.delete(`/monthly-balances/${id}`),
+};
+
+// Credit Card APIs (Direct Axios calls)
+export const creditCardAPI = {
+  getAll: async () => {
+    const response = await api.get('/fintrack/credit-cards');
+    return response.data.results; // Adjust based on actual API response structure
   },
-  cards: {
-    getAll: async (): Promise<Card[]> => {
-      return fetchApi<Card[]>(ENDPOINTS.cards);
-    },
-    getById: async (id: string): Promise<Card> => {
-      return fetchApi<Card>(`${ENDPOINTS.cards}/${id}`);
-    },
-    create: async (card: Omit<Card, 'id'>): Promise<Card> => {
-      return fetchApi<Card>(ENDPOINTS.cards, {
-        method: 'POST',
-        body: JSON.stringify(card),
-      });
-    },
-    update: async (id: string, card: Partial<Card>): Promise<Card> => {
-      return fetchApi<Card>(`${ENDPOINTS.cards}/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(card),
-      });
-    },
-    delete: async (id: string): Promise<void> => {
-      return fetchApi<void>(`${ENDPOINTS.cards}/${id}`, {
-        method: 'DELETE',
-      });
-    },
+  getById: async (id: string) => {
+    const response = await api.get(`/fintrack/credit-cards/${id}`);
+    return response.data; // Adjust based on actual API response structure
   },
-  expenses: {
-    getAll: async (): Promise<Transaction[]> => {
-      return fetchApi<Transaction[]>(ENDPOINTS.expenses);
-    },
-    getById: async (id: string): Promise<Transaction> => {
-      return fetchApi<Transaction>(`${ENDPOINTS.expenses}${id}/`);
-    },
-    create: async (expense: Omit<Transaction, 'id'>): Promise<Transaction> => {
-      return fetchApi<Transaction>(ENDPOINTS.expenses, {
-        method: 'POST',
-        body: JSON.stringify(expense),
-      });
-    },
-    update: async (id: string, expense: Partial<Transaction>): Promise<Transaction> => {
-      return fetchApi<Transaction>(`${ENDPOINTS.expenses}${id}/`, {
-        method: 'PUT',
-        body: JSON.stringify(expense),
-      });
-    },
-    delete: async (id: string): Promise<void> => {
-      return fetchApi<void>(`${ENDPOINTS.expenses}${id}/`, {
-        method: 'DELETE',
-      });
-    },
+  create: async (cardData: any) => {
+    const response = await api.post('/fintrack/credit-cards/', cardData);
+    return response.data;
   },
-  monthlySummaries: {
-    getAll: async (): Promise<MonthlyAccountSummary[]> => fetchApi(ENDPOINTS.monthlySummaries),
-    create: async (data: Omit<MonthlyAccountSummary, 'id' | 'user' | 'created_at'>) =>
-      fetchApi(ENDPOINTS.monthlySummaries, { method: 'POST', body: JSON.stringify(data) }),
+  update: async (id: string, cardData: any) => {
+    const response = await api.put(`/fintrack/credit-cards/${id}`, cardData);
+    return response.data;
   },
-  monthlyBalances: {
-    getAll: async () => fetchApi(ENDPOINTS.monthlyBalances),
-    create: async (data: any) => fetchApi(ENDPOINTS.monthlyBalances, { method: 'POST', body: JSON.stringify(data) }),
-    update: async (id: string, data: any) => fetchApi(`${ENDPOINTS.monthlyBalances}${id}/`, { method: 'PUT', body: JSON.stringify(data) }),
-    delete: async (id: string) => fetchApi(`${ENDPOINTS.monthlyBalances}${id}/`, { method: 'DELETE' }),
-  },
-  incomes: {
-    getAll: async () => fetchApi(ENDPOINTS.incomes),
-    create: async (data: any) => fetchApi(ENDPOINTS.incomes, { method: 'POST', body: JSON.stringify(data) }),
-    update: async (id: string, data: any) => fetchApi(`${ENDPOINTS.incomes}${id}/`, { method: 'PUT', body: JSON.stringify(data) }),
-    delete: async (id: string) => fetchApi(`${ENDPOINTS.incomes}${id}/`, { method: 'DELETE' }),
-  },
-  statements: {
-    upload: async (file: File): Promise<void> => {
-      const formData = new FormData();
-      formData.append('pdf_file', file); // Backend expects 'pdf_file' for /api/pdf-parser/
-      const response = await fetch('/api/pdf-parser/', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-      let errorMsg = 'Upload failed';
-      if (!response.ok) {
-        try {
-          const data = await response.json();
-          errorMsg = data?.error || data?.message || errorMsg;
-        } catch (e) {
-          // fallback: try text
-          try {
-            errorMsg = await response.text();
-          } catch { /* ignore */ }
-        }
-        throw new Error(errorMsg);
-      }
-    },
+  delete: async (id: string) => {
+    const response = await api.delete(`/fintrack/credit-cards/${id}`);
+    return response.data;
   },
 };
+
+export default api;

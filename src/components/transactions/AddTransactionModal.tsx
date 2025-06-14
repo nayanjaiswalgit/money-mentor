@@ -1,22 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import type { Transaction, Account } from '../../types';
-import { api } from '../../services/api';
+import api, { accountAPI } from '../../services/api';
 
 interface AddTransactionModalProps {
   onClose: () => void;
-  onSubmit: (transaction: Omit<Transaction, 'id'>) => Promise<void>;
-  initialValues?: Partial<Transaction>;
+  onSubmit: (transaction: Omit<Transaction, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  initialValues?: Partial<Omit<Transaction, 'userId' | 'createdAt' | 'updatedAt'>>;
 }
 
 export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ onClose, onSubmit, initialValues }) => {
-  const [form, setForm] = useState<Omit<Transaction, 'id'>>({
-    user: '',
-    account: '',
+  const [form, setForm] = useState<Omit<Transaction, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>({
+    accountId: '',
     amount: 0,
-    is_credit: false,
-    date: new Date().toISOString().slice(0, 10),
+    type: 'expense', // Default to 'expense'
+    category: '',
     description: '',
-    expenses: [],
+    date: new Date().toISOString().slice(0, 10),
     ...(initialValues || {})
   });
   const [loading, setLoading] = useState(false);
@@ -24,13 +23,24 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ onClos
   const [accounts, setAccounts] = useState<Account[]>([]);
 
   useEffect(() => {
-    api.accounts.getAll().then(setAccounts);
+    const fetchAccounts = async () => {
+      try {
+        const response = await accountAPI.getAccounts();
+        setAccounts(response.data.results || []);
+      } catch (err) {
+        console.error('Failed to fetch accounts:', err);
+        setError('Failed to load accounts.');
+      }
+    };
+    fetchAccounts();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     if (type === 'checkbox') {
       setForm((prev) => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
+    } else if (name === 'amount') {
+      setForm((prev) => ({ ...prev, [name]: parseFloat(value) }));
     } else {
       setForm((prev) => ({ ...prev, [name]: value }));
     }
@@ -42,6 +52,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ onClos
     setError(null);
     try {
       await onSubmit(form);
+      onClose();
     } catch (err: any) {
       setError(err.message || 'Failed to save transaction.');
     } finally {
@@ -85,15 +96,15 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ onClos
           <div>
             <label className="block text-sm font-medium mb-1">Account</label>
             <select
-              name="account"
-              value={form.account}
+              name="accountId"
+              value={form.accountId}
               onChange={handleChange}
               className="w-full border rounded px-3 py-2"
               required
             >
               <option value="">Select Account</option>
               {accounts.map((acc) => (
-                <option key={acc.id} value={acc.id}>{acc.account_name}</option>
+                <option key={acc.id} value={acc.id}>{acc.name}</option>
               ))}
             </select>
           </div>
@@ -108,15 +119,29 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ onClos
               required
             />
           </div>
-          <div className="flex items-center">
+          <div>
+            <label className="block text-sm font-medium mb-1">Category</label>
             <input
-              type="checkbox"
-              name="is_credit"
-              checked={!!form.is_credit}
+              type="text"
+              name="category"
+              value={form.category}
               onChange={handleChange}
-              className="mr-2"
+              className="w-full border rounded px-3 py-2"
+              required
             />
-            <label className="text-sm">Credit Transaction</label>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Transaction Type</label>
+            <select
+              name="type"
+              value={form.type}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2"
+              required
+            >
+              <option value="expense">Expense</option>
+              <option value="income">Income</option>
+            </select>
           </div>
           {error && <div className="text-red-600 text-sm">{error}</div>}
           <div className="flex justify-end">

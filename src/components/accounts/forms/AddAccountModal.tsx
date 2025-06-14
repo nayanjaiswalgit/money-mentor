@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { useCreateAccountMutation, useGetBankNamesQuery } from '../../../app/api/accountApi'; // Assuming the hook is imported from an api file
+import { useCreateAccountMutation, useGetBankNamesQuery } from '../../../app/api/accountApi';
+import { creditCardAPI } from '../../../services/api';
 
 interface AddAccountModalProps {
   isOpen: boolean;
@@ -20,7 +21,9 @@ export function AddAccountModal({ isOpen, onClose, onSubmit }: AddAccountModalPr
     parentAccount: '', // optional
   });
 
-  const [createAccount, { isLoading, isSuccess, error }] = useCreateAccountMutation();
+  const [createAccount, { isLoading: isCreatingAccount, error: createAccountError }] = useCreateAccountMutation();
+  const [isCreatingCreditCard, setIsCreatingCreditCard] = useState(false);
+  const [createCreditCardError, setCreateCreditCardError] = useState<any>(null);
   const { data: bankNames, isLoading: isBanksLoading, error: banksError } = useGetBankNamesQuery({});
 
   const handleFieldChange = (field: string, value: string) => {
@@ -29,25 +32,44 @@ export function AddAccountModal({ isOpen, onClose, onSubmit }: AddAccountModalPr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload: any = {
-      account_name: formData.accountName,
-      type: isCreditCard ? "credit_card" : formData.accountType,
-      account_number: formData.accountNumber,
-      currency: formData.currency,
-    };
-    if (isCreditCard && formData.creditLimit) payload.limit = formData.creditLimit;
-    if (formData.bankName) payload.bank_name = formData.bankName;
-    if (formData.parentAccount) payload.parent_account = formData.parentAccount;
     try {
-      await createAccount(payload).unwrap();
+      if (isCreditCard) {
+        setIsCreatingCreditCard(true);
+        setCreateCreditCardError(null);
+        const payload = {
+          name: formData.accountName,
+          card_type: 'credit', // Assuming a default or further selection
+          last_4_digits: formData.accountNumber.slice(-4),
+          balance: 0,
+          limit: parseFloat(formData.creditLimit) || 0,
+          currency: formData.currency,
+          bank_name: formData.bankName || undefined,
+        };
+        await creditCardAPI.create(payload);
+      } else {
+        await createAccount({
+          account_name: formData.accountName,
+          type: formData.accountType,
+          account_number: formData.accountNumber,
+          currency: formData.currency,
+          bank_name: formData.bankName || undefined,
+          parent_account: formData.parentAccount || undefined,
+        }).unwrap();
+      }
       onSubmit({ ...formData, isCreditCard });
       onClose();
     } catch (err) {
       console.error(err);
+      setCreateCreditCardError(err);
+    } finally {
+      setIsCreatingCreditCard(false);
     }
   };
 
   if (!isOpen) return null;
+
+  const isLoading = isCreatingAccount || isCreatingCreditCard;
+  const error = createAccountError || createCreditCardError;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -147,22 +169,29 @@ export function AddAccountModal({ isOpen, onClose, onSubmit }: AddAccountModalPr
               ))}
             </select>
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Parent Account (optional)</label>
-            <input
-              type="text"
-              value={formData.parentAccount}
-              onChange={e => handleFieldChange('parentAccount', e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </div>
+          {!isCreditCard && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">Parent Account (optional)</label>
+              <input
+                type="text"
+                value={formData.parentAccount}
+                onChange={e => handleFieldChange('parentAccount', e.target.value)}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+          )}
           <button
             type="submit"
             className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             disabled={isLoading}
           >
-            {isLoading ? 'Creating...' : 'Create Account'}
+            {isLoading ? 'Creating...' : `Create ${isCreditCard ? 'Card' : 'Account'}`}
           </button>
+          {error && (
+            <p className="text-red-500 text-sm mt-2">
+              Error: {'message' in error ? error.message : ('data' in error && typeof error.data === 'object' && error.data !== null && 'message' in error.data ? (error.data as any).message : 'An unknown error occurred')}
+            </p>
+          )}
         </form>
       </div>
     </div>

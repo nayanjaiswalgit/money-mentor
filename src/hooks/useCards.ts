@@ -1,11 +1,14 @@
-import { api } from '../services/api';
+import api, { creditCardAPI } from '../services/api';
 import { useQueryWrapper } from './useQueryWrapper';
 import { Card } from '../types';
 
 export const useCards = (options = {}) => {
-  return useQueryWrapper<Card[]>({
+  return useQueryWrapper<Card[]>({ 
     queryKey: ['cards'],
-    queryFn: api.cards.getAll,
+    queryFn: async () => {
+      const data = await creditCardAPI.getAll();
+      return data; 
+    },
     ...options,
   });
 };
@@ -13,8 +16,11 @@ export const useCards = (options = {}) => {
 export const useCard = (id: string, options = {}) => {
   return useQueryWrapper<Card>({
     queryKey: ['cards', id],
-    queryFn: () => api.cards.getById(id),
-    enabled: !!id, // Only run the query if we have an ID
+    queryFn: async () => {
+      const data = await creditCardAPI.getById(id);
+      return data; 
+    },
+    enabled: !!id, 
     ...options,
   });
 }; 

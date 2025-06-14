@@ -1,34 +1,59 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Mail, Lock, User, AlertCircle, Loader2, Eye, EyeOff, Phone } from 'lucide-react';
-import { useAppDispatch, useAppSelector } from '../../app/hooks';
-import { login, selectAuthError, selectAuthLoading, selectIsAuthenticated } from '../../features/auth/authSlice';
-import { LoginCredentials } from '../../types/auth';
+import { Mail, Lock, User, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import { useLoginMutation } from '../../app/api/login';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const [login] = useLoginMutation();
+  const [login, { isLoading, error }] = useLoginMutation();
 
   const from = location.state?.from?.pathname || '/dashboard';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      setError('');
-      setLoading(true);
-      await login({username : email, password});
+      await login({identifier : email, password}).unwrap();
       navigate(from, { replace: true });
     } catch (err) {
-      setError('Failed to sign in');
-    } finally {
-      setLoading(false);
+      // Error is already handled by RTK Query
+      console.error('Failed to login:', err);
     }
+  };
+
+  // Helper function to get error message from backend
+  const getErrorMessage = () => {
+    if (!error) return '';
+    
+    // Handle RTK Query error structure
+    if ('data' in error) {
+      const errorData = error.data as any;
+      
+      // Handle different backend error formats
+      if (typeof errorData === 'string') {
+        return errorData;
+      }
+      
+      if (errorData.detail) {
+        return errorData.detail;
+      }
+      
+      if (errorData.non_field_errors) {
+        return errorData.non_field_errors[0];
+      }
+      
+      if (errorData.username) {
+        return errorData.username[0];
+      }
+      
+      if (errorData.password) {
+        return errorData.password[0];
+      }
+    }
+    
+    return 'Failed to sign in';
   };
 
   return (
@@ -55,7 +80,7 @@ export function LoginPage() {
           {error && (
             <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center text-red-600">
               <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
-              <span className="text-sm">{error}</span>
+              <span className="text-sm">{getErrorMessage()}</span>
             </div>
           )}
 
@@ -80,13 +105,9 @@ export function LoginPage() {
                   placeholder="Enter email, username, or phone"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  onBlur={() => setError('')}
-                  disabled={loading}
+                  disabled={isLoading}
                 />
               </div>
-              {error && (
-                <p className="mt-2 text-sm text-red-600">{error}</p>
-              )}
             </div>
 
             <div>
@@ -109,22 +130,17 @@ export function LoginPage() {
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  onBlur={() => setError('')}
-                  disabled={loading}
+                  disabled={isLoading}
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                   <button
                     type="button"
-                    onClick={() => setError('')}
                     className="text-gray-400 hover:text-gray-500 focus:outline-none"
                   >
                     <EyeOff className="h-5 w-5" />
                   </button>
                 </div>
               </div>
-              {error && (
-                <p className="mt-2 text-sm text-red-600">{error}</p>
-              )}
             </div>
 
             <div className="flex items-center justify-between">
@@ -149,12 +165,12 @@ export function LoginPage() {
             <div>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={isLoading}
                 className={`w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ${
-                  loading ? 'opacity-50 cursor-not-allowed' : ''
+                  isLoading ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
-                {loading ? (
+                {isLoading ? (
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 ) : (
                   'Sign in'

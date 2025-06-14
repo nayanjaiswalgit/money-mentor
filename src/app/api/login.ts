@@ -8,7 +8,7 @@ interface LoginResponse  {
 }
 
 interface LoginCredentials {
-  username: string;
+  identifier: string;
   password: string;
 }
 
@@ -16,7 +16,7 @@ export const authAPISlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     login: builder.mutation({
       query: (credentials : LoginCredentials) => ({
-        url: "/auth/token/",
+        url: "/auth/login/",
         method: "POST",
         body: credentials,
       }),

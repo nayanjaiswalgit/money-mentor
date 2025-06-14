@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
-import { api } from '../services/api';
+import api, { transactionAPI } from '../services/api';
 import type { Transaction } from '../types';
 import { AddTransactionModal } from '../components/transactions/AddTransactionModal';
 
@@ -26,9 +26,9 @@ const TransactionTable = ({
         <tr key={tx.id} className="hover:bg-gray-50">
           <td className="px-6 py-4 text-sm text-gray-500">{new Date(tx.date).toLocaleDateString()}</td>
           <td className="px-6 py-4 text-sm font-medium">{tx.description}</td>
-          <td className="px-6 py-4 text-sm text-gray-500">{tx.account}</td>
+          <td className="px-6 py-4 text-sm text-gray-500">{tx.accountId}</td>
           <td className="px-6 py-4 text-sm font-medium text-right">₹{tx.amount.toLocaleString()}</td>
-          <td className="px-6 py-4 text-sm text-right">{tx.is_credit ? 'Credit' : 'Debit'}</td>
+          <td className="px-6 py-4 text-sm text-right">{tx.type === 'income' ? 'Income' : 'Expense'}</td>
           <td className="px-6 py-4 text-sm text-right">
             <button className="text-blue-600 hover:underline mr-2" onClick={() => onEdit(tx)}>Edit</button>
             <button className="text-red-600 hover:underline" onClick={() => onDelete(tx.id)}>Delete</button>
@@ -45,8 +45,12 @@ export function TransactionsPage() {
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
 
   const fetchTransactions = async () => {
-    const data = await api.expenses.getAll();
-    setTransactions(data);
+    try {
+      const response = await transactionAPI.getTransactions();
+      setTransactions(response.data.results || []);
+    } catch (error) {
+      console.error("Failed to fetch transactions:", error);
+    }
   };
 
   useEffect(() => { fetchTransactions(); }, []);
@@ -56,19 +60,29 @@ export function TransactionsPage() {
     setModalOpen(true);
   };
 
-  const handleSave = async (tx: Omit<Transaction, 'id'>) => {
-    selectedTx
-      ? await api.expenses.update(selectedTx.id, tx)
-      : await api.expenses.create(tx);
-    setModalOpen(false);
-    setSelectedTx(null);
-    fetchTransactions();
+  const handleSave = async (tx: Omit<Transaction, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      if (selectedTx) {
+        await transactionAPI.updateTransaction(selectedTx.id, tx);
+      } else {
+        await transactionAPI.createTransaction(tx);
+      }
+      setModalOpen(false);
+      setSelectedTx(null);
+      fetchTransactions();
+    } catch (error) {
+      console.error("Failed to save transaction:", error);
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Delete this transaction?')) {
-      await api.expenses.delete(id);
-      fetchTransactions();
+      try {
+        await transactionAPI.deleteTransaction(id);
+        fetchTransactions();
+      } catch (error) {
+        console.error("Failed to delete transaction:", error);
+      }
     }
   };
 

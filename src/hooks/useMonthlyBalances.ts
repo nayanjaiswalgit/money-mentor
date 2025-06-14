@@ -1,14 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../services/api';
+import api, { monthlyBalanceAPI } from '../services/api';
 
 export function useMonthlyBalances() {
-  return useQuery({ queryKey: ['monthlyBalances'], queryFn: api.monthlyBalances.getAll });
+  return useQuery({ queryKey: ['monthlyBalances'], queryFn: async () => {
+    const response = await monthlyBalanceAPI.getMonthlyBalances();
+    return response.data.results; // Assuming API returns data in .results
+  } });
 }
 
 export function useCreateMonthlyBalance() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: api.monthlyBalances.create,
+    mutationFn: monthlyBalanceAPI.createMonthlyBalance,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['monthlyBalances'] })
   });
 }
@@ -16,7 +19,7 @@ export function useCreateMonthlyBalance() {
 export function useUpdateMonthlyBalance() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...data }: any) => api.monthlyBalances.update(id, data),
+    mutationFn: ({ id, ...data }: any) => monthlyBalanceAPI.updateMonthlyBalance(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['monthlyBalances'] })
   });
 }

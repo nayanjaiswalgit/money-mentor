@@ -1,36 +1,26 @@
-import { ReactNode } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ProtectedRouteProps {
-  children: ReactNode;
-  requiredRole?: string;
-  requiredFeature?: string;
+  children: React.ReactNode;
 }
 
-export const ProtectedRoute = ({
-  children,
-  requiredRole,
-  requiredFeature,
-}: ProtectedRouteProps) => {
-  const { isAuthenticated, hasRole, hasFeature, loading } = useAuth();
+export function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { user, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+      </div>
+    );
   }
 
-  if (!isAuthenticated()) {
+  if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requiredRole && !hasRole(requiredRole)) {
-    return <Navigate to="/unauthorized" replace />;
-  }
-
-  if (requiredFeature && !hasFeature(requiredFeature)) {
-    return <Navigate to="/upgrade" replace />;
-  }
-
   return <>{children}</>;
-}; 
+} 
