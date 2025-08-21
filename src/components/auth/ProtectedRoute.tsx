@@ -1,9 +1,9 @@
 import React from 'react';
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
-import { useGetUserProfileQuery } from '../../app/api/userApi';
+import { useGetUserProfileQuery } from '../../app/api/login';
 
 export function ProtectedRoute() {
-  const { data: user, isLoading } = useGetUserProfileQuery({});
+  const { data: user, isLoading } = useGetUserProfileQuery();
   const location = useLocation();
 
   if (isLoading) {

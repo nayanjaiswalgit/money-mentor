@@ -57,7 +57,7 @@ class AuthService {
 
     // If not found in cookie, try fetching from the dedicated endpoint
     try {
-      const response = await fetch(`${API_URL}/api/auth/csrf/`, {
+      const response = await fetch(`${API_URL}/accounts/csrf/`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -82,7 +82,7 @@ class AuthService {
 
   private async ensureCsrfToken(): Promise<void> {
     try {
-      const response = await fetch(`${API_URL}/api/auth/csrf/`, {
+      const response = await fetch(`${API_URL}/accounts/csrf/`, {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -147,7 +147,7 @@ class AuthService {
   async checkAuthStatus(): Promise<{ isAuthenticated: boolean; user: User | null }> {
   try {
       const headers = await this.getHeaders();
-      const response = await fetch(`${API_URL}/api/auth/me/`, {
+      const response = await fetch(`${API_URL}/accounts/profile/`, {
       method: 'GET',
         headers,
         credentials: 'include',
@@ -172,7 +172,7 @@ class AuthService {
    * The server will set the session cookie automatically
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await this.fetchWithCsrf(`${API_URL}/api/auth/login/`, {
+    const response = await this.fetchWithCsrf(`${API_URL}/accounts/login/`, {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
@@ -185,7 +185,6 @@ class AuthService {
     const data = await response.json();
     return {
       user: data.user,
-      message: data.message || 'Login successful'
     };
   }
 
@@ -193,7 +192,7 @@ class AuthService {
    * Register a new user
    */
   async register(data: RegisterData): Promise<AuthResponse> {
-    const response = await this.fetchWithCsrf(`${API_URL}/api/auth/register/`, {
+    const response = await this.fetchWithCsrf(`${API_URL}/accounts/register/`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -206,7 +205,6 @@ class AuthService {
     const responseData = await response.json();
     return {
       user: responseData.user,
-      message: responseData.message || 'Registration successful'
     };
   }
 
@@ -214,7 +212,7 @@ class AuthService {
    * Logout the current user
    */
   async logout(): Promise<void> {
-    const response = await this.fetchWithCsrf(`${API_URL}/auth/logout/`, {
+    const response = await this.fetchWithCsrf(`${API_URL}/accounts/logout/`, {
         method: 'POST',
     });
 
@@ -231,7 +229,7 @@ class AuthService {
    */
   async getCurrentUser(): Promise<User | null> {
     try {
-      const response = await this.fetchWithCsrf(`${API_URL}/api/auth/me/`, {
+      const response = await this.fetchWithCsrf(`${API_URL}/accounts/profile/`, {
         method: 'GET',
       });
 

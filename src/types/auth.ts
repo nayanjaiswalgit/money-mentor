@@ -45,5 +45,5 @@ export interface RegisterData extends LoginCredentials {
 
 export interface AuthResponse {
   user: User;
-  token: string;
+  token?: string;
 } 

@@ -6,54 +6,33 @@ import { useLoginMutation } from '../../app/api/login';
 export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const [login, { isLoading, error }] = useLoginMutation();
+  const [login, { isLoading }] = useLoginMutation();
 
   const from = location.state?.from?.pathname || '/dashboard';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await login({identifier : email, password}).unwrap();
-      navigate(from, { replace: true });
-    } catch (err) {
-      // Error is already handled by RTK Query
-      console.error('Failed to login:', err);
-    }
-  };
+    setLoginError(null); // Clear any previous errors
 
-  // Helper function to get error message from backend
-  const getErrorMessage = () => {
-    if (!error) return '';
-    
-    // Handle RTK Query error structure
-    if ('data' in error) {
-      const errorData = error.data as any;
-      
-      // Handle different backend error formats
-      if (typeof errorData === 'string') {
-        return errorData;
+    try {
+      const response = await login({ identifier: email, password }).unwrap();
+      if (response.success) {
+        navigate(from, { replace: true });
+      } else {
+        setLoginError(response.error || 'Login failed');
       }
-      
-      if (errorData.detail) {
-        return errorData.detail;
-      }
-      
-      if (errorData.non_field_errors) {
-        return errorData.non_field_errors[0];
-      }
-      
-      if (errorData.username) {
-        return errorData.username[0];
-      }
-      
-      if (errorData.password) {
-        return errorData.password[0];
-      }
+    } catch (err: any) {
+      // Handle RTK Query error
+      const errorMessage = err.data?.error || 
+                          err.data?.detail || 
+                          err.data?.non_field_errors?.[0] || 
+                          'Failed to sign in';
+      setLoginError(errorMessage);
     }
-    
-    return 'Failed to sign in';
   };
 
   return (
@@ -77,17 +56,17 @@ export function LoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow-xl rounded-2xl sm:px-10 border border-gray-100">
-          {error && (
+          {loginError && (
             <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center text-red-600">
               <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
-              <span className="text-sm">{getErrorMessage()}</span>
+              <span className="text-sm">{loginError}</span>
             </div>
           )}
 
           <form className="space-y-6" onSubmit={handleSubmit} noValidate>
             <div>
               <label htmlFor="identifier" className="block text-sm font-medium text-gray-700">
-                Email, username, or phone number
+                Email or username
               </label>
               <div className="mt-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -100,9 +79,9 @@ export function LoginPage() {
                   autoComplete="username"
                   required
                   className={`block w-full pl-10 pr-3 py-2.5 border rounded-lg shadow-sm ${
-                    error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'
+                    loginError ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'
                   } focus:outline-none focus:ring-2 transition-colors`}
-                  placeholder="Enter email, username, or phone"
+                  placeholder="Enter email or username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
@@ -121,11 +100,11 @@ export function LoginPage() {
                 <input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   required
                   className={`block w-full pl-10 pr-10 py-2.5 border rounded-lg shadow-sm ${
-                    error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'
+                    loginError ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'
                   } focus:outline-none focus:ring-2 transition-colors`}
                   placeholder="Enter your password"
                   value={password}
@@ -135,9 +114,14 @@ export function LoginPage() {
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                   <button
                     type="button"
+                    onClick={() => setShowPassword(!showPassword)}
                     className="text-gray-400 hover:text-gray-500 focus:outline-none"
                   >
-                    <EyeOff className="h-5 w-5" />
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
                   </button>
                 </div>
               </div>

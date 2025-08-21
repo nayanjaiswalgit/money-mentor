@@ -1,12 +1,12 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User } from '../types';
-import { authAPI } from '../services/api';
+import { useLoginMutation, useGetUserProfileQuery, useLogoutMutation } from '../app/api/login';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -14,67 +14,97 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
 
+  const [loginMutation] = useLoginMutation();
+  const [logoutMutation] = useLogoutMutation();
+
+  // Get user profile
+  const { data: userProfile, isLoading: isProfileLoading, error: profileError } = useGetUserProfileQuery(undefined, {
+    skip: !user, // Only fetch profile if we have a user in localStorage
+  });
+
+  // Update user state when profile changes
   useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (token) {
-        const response = await authAPI.getCurrentUser();
-        setUser(response.data);
+    if (!isProfileLoading) {
+      if (profileError) {
+        setUser(null);
+        setAuthError('Failed to fetch user profile.');
+        localStorage.removeItem('user');
+      } else if (userProfile) {
+        setUser(userProfile as User);
+        setAuthError(null);
       }
-    } catch (err) {
-      console.error('Auth check failed:', err);
-      localStorage.removeItem('token');
+      setLoading(false);
+    }
+  }, [userProfile, isProfileLoading, profileError]);
+
+  const login = useCallback(async (identifier: string, password: string) => {
+    try {
+      setAuthError(null);
+      setLoading(true);
+      const result = await loginMutation({ identifier, password }).unwrap();
+      if (result.success && result.data?.user) {
+        const userData = result.data.user;
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData);
+      } else {
+        throw new Error(result.error || 'Login failed');
+      }
+    } catch (err: any) {
+      console.error('Login failed:', err);
+      setAuthError(err.data?.error || err.data?.detail || err.data?.non_field_errors?.[0] || 'Login failed');
+      throw err;
     } finally {
       setLoading(false);
     }
-  };
+  }, [loginMutation]);
 
-  const login = async (email: string, password: string) => {
+  const register = useCallback(async (name: string, email: string, password: string) => {
     try {
-      setError(null);
-      const response = await authAPI.login({ email, password });
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      setUser(user);
+      setAuthError(null);
+      setLoading(true);
+      // Assuming a register mutation exists elsewhere or will be implemented
+      console.log('Register function called, but no RTK Query register mutation available. Implement as needed.');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed');
+      console.error('Registration failed:', err);
+      setAuthError(err.data?.error || err.data?.detail || err.data?.non_field_errors?.[0] || 'Registration failed');
       throw err;
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
-  const register = async (name: string, email: string, password: string) => {
+  const logout = useCallback(async () => {
     try {
-      setError(null);
-      const response = await authAPI.register({ name, email, password });
-      const { token, user } = response.data;
-      localStorage.setItem('token', token);
-      setUser(user);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed');
-      throw err;
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await authAPI.logout();
-      localStorage.removeItem('token');
-      setUser(null);
+      setLoading(true);
+      await logoutMutation().unwrap();
     } catch (err) {
       console.error('Logout failed:', err);
+    } finally {
+      localStorage.removeItem('user');
+      setUser(null);
+      setAuthError(null);
+      setLoading(false);
     }
-  };
+  }, [logoutMutation]);
+
+  const value = React.useMemo(() => ({
+    user,
+    loading,
+    error: authError,
+    login,
+    register,
+    logout,
+  }), [user, loading, authError, login, register, logout]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, register, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
@@ -88,30 +118,4 @@ export function useAuth() {
   return context;
 }
 
-// Higher Order Component for protecting routes
-export const withAuth = <P extends object>(
-  Component: React.ComponentType<P>
-): React.FC<P> => {
-  const AuthenticatedComponent: React.FC<P> = (props) => {
-    const { isAuthenticated, loading } = useAuth();
-
-    useEffect(() => {
-      if (!loading && !isAuthenticated()) {
-        // Redirect to login if not authenticated
-        window.location.href = '/login';
-      }
-    }, [isAuthenticated, loading]);
-
-    if (loading) {
-      return <div>Loading...</div>; // Or your loading component
-    }
-
-    if (!isAuthenticated()) {
-      return null; // Or a redirect component
-    }
-
-    return <Component {...(props as P)} />;
-  };
-
-  return AuthenticatedComponent;
-};
+// Removed withAuth HOC as it's replaced by ProtectedRoute component

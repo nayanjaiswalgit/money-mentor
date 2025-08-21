@@ -1,197 +1,180 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { useCreateAccountMutation, useGetBankNamesQuery } from '../../../app/api/accountApi';
-import { creditCardAPI } from '../../../services/api';
+import { Account, CreditCard } from '../../../app/api/accountApi';
 
 interface AddAccountModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: Partial<Account | CreditCard>) => Promise<void>;
+  type: 'accounts' | 'cards';
 }
 
-export function AddAccountModal({ isOpen, onClose, onSubmit }: AddAccountModalProps) {
-  const [isCreditCard, setIsCreditCard] = useState(false);
-  const [formData, setFormData] = useState({
-    accountName: '',
-    accountType: 'bank' as string, // matches backend choices
-    accountNumber: '',
-    creditLimit: '', // only for credit cards
-    bankName: '', // optional
-    currency: '',
-    parentAccount: '', // optional
+export function AddAccountModal({ isOpen, onClose, onSubmit, type }: AddAccountModalProps) {
+  const [formData, setFormData] = useState<Partial<Account | CreditCard>>({
+    name: '',
+    type: '',
+    balance: 0,
+    currency: 'USD',
+    institution: '',
   });
-
-  const [createAccount, { isLoading: isCreatingAccount, error: createAccountError }] = useCreateAccountMutation();
-  const [isCreatingCreditCard, setIsCreatingCreditCard] = useState(false);
-  const [createCreditCardError, setCreateCreditCardError] = useState<any>(null);
-  const { data: bankNames, isLoading: isBanksLoading, error: banksError } = useGetBankNamesQuery({});
-
-  const handleFieldChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (isCreditCard) {
-        setIsCreatingCreditCard(true);
-        setCreateCreditCardError(null);
-        const payload = {
-          name: formData.accountName,
-          card_type: 'credit', // Assuming a default or further selection
-          last_4_digits: formData.accountNumber.slice(-4),
-          balance: 0,
-          limit: parseFloat(formData.creditLimit) || 0,
-          currency: formData.currency,
-          bank_name: formData.bankName || undefined,
-        };
-        await creditCardAPI.create(payload);
-      } else {
-        await createAccount({
-          account_name: formData.accountName,
-          type: formData.accountType,
-          account_number: formData.accountNumber,
-          currency: formData.currency,
-          bank_name: formData.bankName || undefined,
-          parent_account: formData.parentAccount || undefined,
-        }).unwrap();
-      }
-      onSubmit({ ...formData, isCreditCard });
-      onClose();
-    } catch (err) {
-      console.error(err);
-      setCreateCreditCardError(err);
-    } finally {
-      setIsCreatingCreditCard(false);
-    }
-  };
 
   if (!isOpen) return null;
 
-  const isLoading = isCreatingAccount || isCreatingCreditCard;
-  const error = createAccountError || createCreditCardError;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await onSubmit(formData);
+    setFormData({
+      name: '',
+      type: '',
+      balance: 0,
+      currency: 'USD',
+      institution: '',
+    });
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'balance' ? parseFloat(value) : value
+    }));
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-md p-6">
-        <div className="flex justify-between items-center mb-6">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">
-            Add {isCreditCard ? 'Credit Card' : 'Account'}
+            Add {type === 'accounts' ? 'Account' : 'Credit Card'}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X className="h-6 w-6" />
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <X size={24} />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="flex items-center mb-4">
-            <input
-              type="checkbox"
-              id="isCreditCard"
-              checked={isCreditCard}
-              onChange={(e) => setIsCreditCard(e.target.checked)}
-              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-            />
-            <label htmlFor="isCreditCard" className="ml-2 block text-sm text-gray-900">
-              This is a credit card
-            </label>
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Account Name</label>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Name</label>
             <input
               type="text"
-              value={formData.accountName}
-              onChange={e => handleFieldChange('accountName', e.target.value)}
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               required
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Account Number</label>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Type</label>
+            <select
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              required
+            >
+              <option value="">Select a type</option>
+              {type === 'accounts' ? (
+                <>
+                  <option value="checking">Checking</option>
+                  <option value="savings">Savings</option>
+                  <option value="investment">Investment</option>
+                </>
+              ) : (
+                <>
+                  <option value="visa">Visa</option>
+                  <option value="mastercard">Mastercard</option>
+                  <option value="amex">American Express</option>
+                </>
+              )}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Balance</label>
             <input
-              type="text"
-              value={formData.accountNumber}
-              onChange={e => handleFieldChange('accountNumber', e.target.value)}
+              type="number"
+              name="balance"
+              value={formData.balance}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               required
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+              step="0.01"
             />
           </div>
-          {!isCreditCard && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Account Type</label>
+
+          {type === 'accounts' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Currency</label>
               <select
-                value={formData.accountType}
-                onChange={e => handleFieldChange('accountType', e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                name="currency"
+                value={formData.currency}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                required
               >
-                <option value="bank">Bank</option>
-                <option value="digital_wallet">Digital Wallet</option>
-                <option value="cash">Cash</option>
-                <option value="investment">Investment</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
               </select>
             </div>
           )}
-          {isCreditCard && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Credit Limit</label>
-              <input
-                type="number"
-                value={formData.creditLimit}
-                onChange={e => handleFieldChange('creditLimit', e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
+
+          {type === 'cards' && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Credit Limit</label>
+                <input
+                  type="number"
+                  name="limit"
+                  value={(formData as Partial<CreditCard>).limit || 0}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  required
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Due Date</label>
+                <input
+                  type="date"
+                  name="due_date"
+                  value={(formData as Partial<CreditCard>).due_date || ''}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+            </>
           )}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Currency</label>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Institution</label>
             <input
               type="text"
-              value={formData.currency}
-              onChange={e => handleFieldChange('currency', e.target.value)}
-              required
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+              name="institution"
+              value={formData.institution}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">Bank Name (optional)</label>
-            <select
-              value={formData.bankName}
-              onChange={e => handleFieldChange('bankName', e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+
+          <div className="flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
             >
-              <option value="">Select a bank</option>
-              {isBanksLoading && <option>Loading...</option>}
-              {banksError && <option>Error loading banks</option>}
-              {bankNames && bankNames.results && bankNames.results.map((bank: any) => (
-                <option key={bank.id} value={bank.name}>{bank.name}</option>
-              ))}
-              {bankNames && !bankNames.results && Array.isArray(bankNames) && bankNames.map((bank: any) => (
-                <option key={bank.id} value={bank.name}>{bank.name}</option>
-              ))}
-            </select>
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+            >
+              Add {type === 'accounts' ? 'Account' : 'Card'}
+            </button>
           </div>
-          {!isCreditCard && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Parent Account (optional)</label>
-              <input
-                type="text"
-                value={formData.parentAccount}
-                onChange={e => handleFieldChange('parentAccount', e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
-          )}
-          <button
-            type="submit"
-            className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Creating...' : `Create ${isCreditCard ? 'Card' : 'Account'}`}
-          </button>
-          {error && (
-            <p className="text-red-500 text-sm mt-2">
-              Error: {'message' in error ? error.message : ('data' in error && typeof error.data === 'object' && error.data !== null && 'message' in error.data ? (error.data as any).message : 'An unknown error occurred')}
-            </p>
-          )}
         </form>
       </div>
     </div>

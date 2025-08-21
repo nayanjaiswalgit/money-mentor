@@ -6,7 +6,7 @@ interface Tab {
 interface TabsProps {
   tabs: Tab[];
   activeTab: string;
-  onTabChange: (tabId: string) => void;
+  onTabChange: (tabId: 'accounts' | 'cards') => void;
 }
 
 export function Tabs({ tabs, activeTab, onTabChange }: TabsProps) {
@@ -16,7 +16,7 @@ export function Tabs({ tabs, activeTab, onTabChange }: TabsProps) {
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => onTabChange(tab.id)}
+            onClick={() => onTabChange(tab.id as 'accounts' | 'cards')}
             className={`
               whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm
               ${activeTab === tab.id

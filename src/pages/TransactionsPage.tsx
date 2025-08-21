@@ -67,9 +67,9 @@ export function TransactionsPage() {
       } else {
         await transactionAPI.createTransaction(tx);
       }
-      setModalOpen(false);
-      setSelectedTx(null);
-      fetchTransactions();
+    setModalOpen(false);
+    setSelectedTx(null);
+    fetchTransactions();
     } catch (error) {
       console.error("Failed to save transaction:", error);
     }
@@ -79,7 +79,7 @@ export function TransactionsPage() {
     if (confirm('Delete this transaction?')) {
       try {
         await transactionAPI.deleteTransaction(id);
-        fetchTransactions();
+      fetchTransactions();
       } catch (error) {
         console.error("Failed to delete transaction:", error);
       }

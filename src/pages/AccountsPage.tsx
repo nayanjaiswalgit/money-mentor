@@ -5,10 +5,14 @@ import { Tabs } from '../components/ui/Tabs';
 import { FileUploadModal } from '../components/upload/FileUploadModal';
 import { UploadProgress } from '../components/upload/UploadProgress';
 import { useFileUpload } from '../hooks/useFileUpload';
-import { useGetAccountQuery } from '../app/api/accountApi';
-import { useCards } from '../hooks/useCards';
-import {AddAccountModal} from "../components/accounts/forms/AddAccountModal";
-import { Account } from '../types';
+import { 
+  useGetAccountsQuery,
+  useCreateAccountMutation,
+  useUpdateAccountMutation,
+  useDeleteAccountMutation,
+  Account
+} from '../app/api/accountApi';
+import { AddAccountModal } from "../components/accounts/forms/AddAccountModal";
 
 const tabs = [
   { id: 'accounts', label: 'Bank Accounts' },
@@ -16,14 +20,39 @@ const tabs = [
 ];
 
 export function AccountsPage() {
-  const [activeTab, setActiveTab] = useState('accounts');
+  const [activeTab, setActiveTab] = useState<'accounts' | 'cards'>('accounts');
   const [showModal, setShowModal] = useState(false);
 
-const handleAddAccount = (data: any) => {
-  console.log('New account/card:', data);
-  // Handle the submission - refetch data after submission
-  refetchAccounts();
-  refetchCreditCards();
+  const { data: accountsData, isLoading: accountsLoading, error: accountsError } =
+    useGetAccountsQuery(undefined);
+  
+  const [createAccount] = useCreateAccountMutation();
+  const [updateAccount] = useUpdateAccountMutation();
+  const [deleteAccount] = useDeleteAccountMutation();
+
+  const handleAddAccount = async (data: Partial<Account>) => {
+    try {
+      await createAccount(data).unwrap();
+      setShowModal(false);
+    } catch (error) {
+      console.error('Failed to add:', error);
+    }
+  };
+
+  const handleUpdateAccount = async (id: string, data: Partial<Account>) => {
+    try {
+      await updateAccount({ id, data }).unwrap();
+    } catch (error) {
+      console.error('Failed to update:', error);
+    }
+  };
+
+  const handleDeleteAccount = async (id: string) => {
+    try {
+      await deleteAccount(id).unwrap();
+    } catch (error) {
+      console.error('Failed to delete:', error);
+    }
 };
 
   const [uploadModalState, setUploadModalState] = useState<{
@@ -33,9 +62,6 @@ const handleAddAccount = (data: any) => {
   }>({ isOpen: false });
   
   const { uploads, uploadFiles, dismissUpload } = useFileUpload();
-
-  const { data: accountsData, isLoading: accountsLoading, error: accountsError, refetch: refetchAccounts } = useGetAccountQuery({});
-  const { data: creditCardsData, isLoading: creditCardsLoading, error: creditCardsError, refetch: refetchCreditCards } = useCards();
 
   const handleUpload = (accountId: string) => {
     const account = accountsData?.results.find((a: Account) => a.id === accountId);
@@ -55,8 +81,13 @@ const handleAddAccount = (data: any) => {
     }
   };
 
-  const isLoading = accountsLoading || creditCardsLoading;
-  const error = accountsError || creditCardsError;
+  const isLoading = accountsLoading;
+  const error = accountsError;
+
+  // Filter accounts and credit cards based on activeTab for rendering
+  const displayedAccounts = activeTab === 'accounts' 
+    ? accountsData?.results.filter(acc => !['visa', 'mastercard', 'amex'].includes(acc.type)) || []
+    : accountsData?.results.filter(acc => ['visa', 'mastercard', 'amex'].includes(acc.type)) || [];
 
   return (
     <div className="p-6">
@@ -84,19 +115,20 @@ const handleAddAccount = (data: any) => {
           <div>Error loading {activeTab === 'accounts' ? 'accounts' : 'credit cards'}</div>
         ) : (
           <AccountsList 
-            accounts={accountsData?.results || []}
-            creditCards={creditCardsData || []}
+            accounts={displayedAccounts}
             onUpload={handleUpload}
+            onUpdate={handleUpdateAccount}
+            onDelete={handleDeleteAccount}
             activeTab={activeTab}
           />
         )}
       </div>
 
-      {/* AddAccountModal: Show when showModal is true */}
       <AddAccountModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         onSubmit={handleAddAccount}
+        type={activeTab}
       />
 
       <FileUploadModal

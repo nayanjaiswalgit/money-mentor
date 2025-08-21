@@ -19,16 +19,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Auth APIs
-export const authAPI = {
-  login: (credentials: { email: string; password: string }) =>
-    api.post('/auth/login', credentials),
-  register: (userData: { email: string; password: string; name: string }) =>
-    api.post('/auth/register', userData),
-  logout: () => api.post('/auth/logout'),
-  getCurrentUser: () => api.get('/auth/me'),
-};
-
 // Account APIs
 export const accountAPI = {
   connectBank: (bankData: any) => api.post('/accounts/connect-bank', bankData),
@@ -119,30 +109,6 @@ export const monthlyBalanceAPI = {
   updateMonthlyBalance: (id: string, balanceData: any) =>
     api.put(`/monthly-balances/${id}`, balanceData),
   deleteMonthlyBalance: (id: string) => api.delete(`/monthly-balances/${id}`),
-};
-
-// Credit Card APIs (Direct Axios calls)
-export const creditCardAPI = {
-  getAll: async () => {
-    const response = await api.get('/fintrack/credit-cards');
-    return response.data.results; // Adjust based on actual API response structure
-  },
-  getById: async (id: string) => {
-    const response = await api.get(`/fintrack/credit-cards/${id}`);
-    return response.data; // Adjust based on actual API response structure
-  },
-  create: async (cardData: any) => {
-    const response = await api.post('/fintrack/credit-cards/', cardData);
-    return response.data;
-  },
-  update: async (id: string, cardData: any) => {
-    const response = await api.put(`/fintrack/credit-cards/${id}`, cardData);
-    return response.data;
-  },
-  delete: async (id: string) => {
-    const response = await api.delete(`/fintrack/credit-cards/${id}`);
-    return response.data;
-  },
 };
 
 export default api;

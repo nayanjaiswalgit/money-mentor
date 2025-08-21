@@ -1,10 +1,18 @@
 import apiSlice from "../../app/apiSlice";
 
-
-interface LoginResponse  {
-    access: string;
-    refresh: string;
-    
+interface LoginResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    user: {
+      id: string;
+      username: string;
+      email: string;
+      first_name?: string;
+      last_name?: string;
+    }
+  };
+  error?: string;
 }
 
 interface LoginCredentials {
@@ -12,30 +20,62 @@ interface LoginCredentials {
   password: string;
 }
 
+interface UserProfile {
+  id: string;
+  username: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+}
+
 export const authAPISlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    login: builder.mutation({
-      query: (credentials : LoginCredentials) => ({
+    login: builder.mutation<LoginResponse, LoginCredentials>({
+      query: (credentials) => ({
         url: "/auth/login/",
         method: "POST",
         body: credentials,
       }),
       transformResponse: (response: LoginResponse) => {
-        localStorage.setItem("refresh", response.refresh);
-        localStorage.setItem("access", response.access);
+        if (response.success && response.data?.user) {
+          localStorage.setItem("user", JSON.stringify(response.data.user));
+        }
         return response;
       },
-
-      onQueryStarted: async (arg, { dispatch, queryFulfilled }) => {
+    }),
+    getUserProfile: builder.query<UserProfile | null, void>({
+      query: () => ({
+        url: "/auth/profile/",
+        method: "GET",
+      }),
+      providesTags: ["User"],
+      transformResponse: (response: any) => {
+        if (response.success && response.data?.user) {
+          return response.data.user;
+        }
+        return null;
+      },
+    }),
+    logout: builder.mutation<void, void>({
+      query: () => ({
+        url: "/auth/logout/",
+        method: "POST",
+      }),
+      async onQueryStarted(_, { dispatch, queryFulfilled }) {
         try {
           await queryFulfilled;
-          dispatch(apiSlice.endpoints.getUserProfile.initiate());
+          localStorage.removeItem("user");
+          dispatch(authAPISlice.util.invalidateTags(["User"]));
         } catch (error) {
-          console.log(error);
+          console.error('Logout failed:', error);
         }
       },
     }),
   }),
 });
 
-export const { useLoginMutation } = authAPISlice;
+export const { 
+  useLoginMutation,
+  useGetUserProfileQuery,
+  useLogoutMutation,
+} = authAPISlice;
