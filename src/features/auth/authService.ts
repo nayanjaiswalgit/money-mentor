@@ -6,6 +6,8 @@ import {
   UserRole,
   AuthResponse 
 } from '../../types/auth';
+import { fetchApi } from '../../services/apiClient';
+import { API_ENDPOINTS } from '../../constants/apiEndpoints';
 
 // Re-export the types for consistency
 export type { User, UserRole, LoginCredentials, RegisterData };
@@ -48,31 +50,15 @@ class AuthService {
   }
 
   private async getCsrfToken(): Promise<string | null> {
-    // First, try to get the CSRF token from the cookie
-    let csrf = this.getCookie('csrftoken');
-
-    if (csrf) {
-      return csrf;
-    }
-
-    // If not found in cookie, try fetching from the dedicated endpoint
     try {
-      const response = await fetch(`${API_URL}/accounts/csrf/`, {
+      const data = await fetchApi<{ csrfToken: string }>(API_ENDPOINTS.CSRF, {
         method: 'GET',
         credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to get CSRF token from endpoint');
-      }
-
-      const data = await response.json();
-      // After fetching, try to get it from the cookie again as the endpoint might set it.
-      csrf = this.getCookie('csrftoken');
+      }, false);
+      let csrf = this.getCookie('csrftoken');
       if (csrf) {
         return csrf;
       }
-      // Fallback: if not in cookie, use the one from JSON (less reliable for Django)
       return data.csrfToken || null;
     } catch (error) {
       console.error('Error getting CSRF token:', error);
@@ -82,23 +68,16 @@ class AuthService {
 
   private async ensureCsrfToken(): Promise<void> {
     try {
-      const response = await fetch(`${API_URL}/accounts/csrf/`, {
+      const data = await fetchApi<{ csrfToken: string }>(API_ENDPOINTS.CSRF, {
         method: 'GET',
         credentials: 'include',
         headers: {
           'Accept': 'application/json',
         },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch CSRF token');
-      }
-
-      const data = await response.json();
+      }, false);
       if (!data.csrfToken) {
         throw new Error('No CSRF token in response');
       }
-
       this.csrfToken = data.csrfToken;
     } catch (error) {
       console.error('Error fetching CSRF token:', error);
@@ -106,38 +85,19 @@ class AuthService {
     }
   }
 
-  private async fetchWithCsrf(url: string, options: RequestInit = {}): Promise<Response> {
+  private async fetchWithCsrf(url: string, options: RequestInit = {}): Promise<any> {
     if (!this.csrfToken) {
       await this.ensureCsrfToken();
     }
-
     const headers = new Headers(options.headers);
     headers.set('X-CSRFToken', this.csrfToken || '');
     headers.set('Content-Type', 'application/json');
-
-    const response = await fetch(url, {
+    const data = await fetchApi(url, {
       ...options,
       credentials: 'include',
       headers,
     });
-
-    if (response.status === 403) {
-      const data = await response.json();
-      if (data.detail?.includes('CSRF')) {
-        await this.ensureCsrfToken();
-        const retryHeaders = new Headers(options.headers);
-        retryHeaders.set('X-CSRFToken', this.csrfToken || '');
-        retryHeaders.set('Content-Type', 'application/json');
-        
-        return fetch(url, {
-          ...options,
-          credentials: 'include',
-          headers: retryHeaders,
-        });
-      }
-    }
-
-    return response;
+    return data;
   }
 
 /**
@@ -147,7 +107,7 @@ class AuthService {
   async checkAuthStatus(): Promise<{ isAuthenticated: boolean; user: User | null }> {
   try {
       const headers = await this.getHeaders();
-      const response = await fetch(`${API_URL}/accounts/profile/`, {
+      const response = await fetchApi<User>(API_ENDPOINTS.PROFILE, {
       method: 'GET',
         headers,
         credentials: 'include',
@@ -172,7 +132,7 @@ class AuthService {
    * The server will set the session cookie automatically
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await this.fetchWithCsrf(`${API_URL}/accounts/login/`, {
+    const response = await this.fetchWithCsrf(API_ENDPOINTS.LOGIN, {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
@@ -192,7 +152,7 @@ class AuthService {
    * Register a new user
    */
   async register(data: RegisterData): Promise<AuthResponse> {
-    const response = await this.fetchWithCsrf(`${API_URL}/accounts/register/`, {
+    const response = await this.fetchWithCsrf(API_ENDPOINTS.REGISTER, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -212,7 +172,7 @@ class AuthService {
    * Logout the current user
    */
   async logout(): Promise<void> {
-    const response = await this.fetchWithCsrf(`${API_URL}/accounts/logout/`, {
+    const response = await this.fetchWithCsrf(API_ENDPOINTS.LOGOUT, {
         method: 'POST',
     });
 
@@ -229,7 +189,7 @@ class AuthService {
    */
   async getCurrentUser(): Promise<User | null> {
     try {
-      const response = await this.fetchWithCsrf(`${API_URL}/accounts/profile/`, {
+      const response = await this.fetchWithCsrf(API_ENDPOINTS.PROFILE, {
         method: 'GET',
       });
 
@@ -295,7 +255,7 @@ class AuthService {
    */
   async fetchWithAuth(input: RequestInfo, init?: RequestInit): Promise<Response> {
     const headers = await this.getHeaders();
-    const response = await fetch(input, {
+    const response = await fetchApi(input, {
       ...init,
       headers: {
         ...headers,

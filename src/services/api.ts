@@ -1,3 +1,5 @@
+// DEPRECATED: Use fetchApi from apiClient.ts and API_ENDPOINTS for all API calls. This file is no longer used.
+
 import axios from 'axios';
 import { Account, Card, Transaction } from '../types';
 

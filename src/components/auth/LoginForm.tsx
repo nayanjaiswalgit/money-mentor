@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useDispatch } from 'react-redux';
+import { login } from '../../features/auth/authSlice';
 
 export const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -9,6 +10,7 @@ export const LoginForm = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
 
   const from = location.state?.from?.pathname || '/';
 
@@ -17,7 +19,7 @@ export const LoginForm = () => {
     setError('');
 
     try {
-      await login({ email, password });
+      await dispatch(login({ email, password })).unwrap();
       navigate(from, { replace: true });
     } catch (err) {
       setError('Invalid email or password');

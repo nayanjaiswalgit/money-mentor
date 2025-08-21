@@ -14,6 +14,7 @@
     "@casl/react": "^3.1.0",
     "@reduxjs/toolkit": "^2.5.0",
     "@tanstack/react-query": "^5.74.4",
+    "framer-motion": "^12.18.1",
     "js-cookie": "^3.0.5",
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",
@@ -21,8 +22,10 @@
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-icons": "^5.5.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^6.22.3",
+    "tailwindcss-patterns": "^0.1.2",
     "xlsx": "^0.18.5",
     "zod": "^3.22.4"
   },

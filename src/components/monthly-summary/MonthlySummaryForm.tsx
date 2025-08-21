@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useCreateMonthlyBalance } from '../../hooks/useMonthlyBalances';
-import { useCreateIncome } from '../../hooks/useIncomes';
+import { useIncomes } from '../../hooks/useIncomes';
 import { useAccounts } from '../../hooks/useAccounts';
 import { useExpenses } from '../../hooks/useExpenses';
 import { Calendar, DollarSign, User, TrendingUp, ArrowDownCircle } from 'lucide-react';
@@ -49,8 +49,8 @@ export function MonthlySummaryForm({ mode }: { mode?: 'balance' | 'income' | 'ex
   const [expenseTags, setExpenseTags] = useState('');
 
   const createBalance = useCreateMonthlyBalance();
-  const createIncome = useCreateIncome();
-  const { addExpense } = useExpenses();
+  const { createIncome } = useIncomes();
+  const { createExpense } = useExpenses();
 
   const handleBalanceSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,25 +66,27 @@ export function MonthlySummaryForm({ mode }: { mode?: 'balance' | 'income' | 'ex
   const handleIncomeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createIncome.mutate({
-      income_source: incomeSource,
-      income_amount: parseFloat(incomeAmount),
-      date_received: dateReceived,
+      source: incomeSource,
+      amount: parseFloat(incomeAmount),
+      date: dateReceived,
       account: incomeAccount,
+      type: 'income',
     });
     setIncomeSource(''); setIncomeAmount(''); setDateReceived(defaultDate); setIncomeAccount('');
   };
 
   const handleExpenseSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    addExpense({
+    createExpense.mutate({
       date: expenseDate,
       amount: parseFloat(expenseAmount),
       description: expenseDesc,
       category: expenseCategory,
-      accountId: expenseAccountId,
-      paymentMethod: expensePaymentMethod,
+      account: expenseAccountId,
+      payment_method: expensePaymentMethod,
       notes: expenseNotes,
       tags: expenseTags.split(',').map(t => t.trim()).filter(Boolean),
+      type: 'expense',
     });
     setExpenseDate(defaultDate); setExpenseAmount(''); setExpenseDesc(''); setExpenseCategory('');
     setExpenseAccountId(''); setExpensePaymentMethod(''); setExpenseNotes(''); setExpenseTags('');

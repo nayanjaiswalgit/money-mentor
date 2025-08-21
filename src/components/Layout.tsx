@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectAuthUser } from '../features/auth/authSlice';
+import { logout } from '../features/auth/authSlice';
 import {
   Home,
   CreditCard,
@@ -11,13 +13,15 @@ import {
   X,
   User,
 } from 'lucide-react';
+import type { AppDispatch } from '../app/store';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { user, logout } = useAuth();
+  const user = useSelector(selectAuthUser);
+  const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -32,10 +36,10 @@ export function Layout({ children }: LayoutProps) {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      await dispatch(logout()).unwrap();
       navigate('/login');
-    } catch (error) {
-      console.error('Logout failed:', error);
+    } catch (error: any) {
+      console.error('Logout failed:', error?.message || error);
     }
   };
 

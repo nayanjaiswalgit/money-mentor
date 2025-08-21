@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { groupApi } from '../../services/groupApi';
+import { useApiMutation } from '../../hooks/useApiMutation';
+import { API_ENDPOINTS } from '../../constants/apiEndpoints';
 
 export default function SettlementForm({ groupId, onSettlementAdded }: { groupId: string, onSettlementAdded: () => void }) {
   const [toUser, setToUser] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
+  const addSettlementMutation = useApiMutation(`/groups/${groupId}/settlements`, 'POST');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await groupApi.addSettlement(groupId, { to_user: toUser, amount, description, date });
+    await addSettlementMutation.mutateAsync({ to_user: toUser, amount, description, date });
     setToUser(''); setAmount(''); setDescription(''); setDate('');
     onSettlementAdded();
   };

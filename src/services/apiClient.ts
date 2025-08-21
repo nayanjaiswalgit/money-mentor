@@ -43,13 +43,13 @@ async function refreshAccessToken() {
   }
 
   try {
-    const response = await fetch(`${API_CONFIG.baseUrl}/auth/refresh`, {
+    const response = await fetchApi('/auth/refresh', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ refresh: refreshToken }),
-    });
+    }, true);
 
     if (!response.ok) {
       throw new ApiError('Failed to refresh token', response.status);

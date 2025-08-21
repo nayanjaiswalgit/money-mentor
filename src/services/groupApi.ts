@@ -1,3 +1,5 @@
+// DEPRECATED: Use fetchApi from apiClient.ts and API_ENDPOINTS for all group API calls. This file is no longer used.
+
 import { fetchApi } from './apiClient';
 
 export const groupApi = {

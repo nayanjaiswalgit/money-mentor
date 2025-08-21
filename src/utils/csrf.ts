@@ -1,5 +1,7 @@
 import store from '../app/store';
 import { logoutUser } from '../features/auth/authSlice';
+import { fetchApi } from '../services/apiClient';
+import { API_ENDPOINTS } from '../constants/apiEndpoints';
 
 /**
  * Utility functions for handling CSRF tokens
@@ -64,27 +66,18 @@ export const getCSRFToken = async (): Promise<string> => {
   try {
     isFetchingToken = true;
     console.log('[CSRF] Fetching new CSRF token...');
-    const response = await fetch(`${API_BASE_URL}/api/auth/csrf/`, {
+    const data = await fetchApi<{ csrfToken: string }>(API_ENDPOINTS.CSRF, {
       method: 'GET',
       credentials: 'include',
       headers: {
         'Accept': 'application/json',
       },
-    });
-    
-    if (!response.ok) {
-      console.error('[CSRF] Failed to get CSRF token:', response.status, response.statusText);
-      throw new Error(`Failed to get CSRF token: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
+    }, false);
     const token = data.csrfToken;
-
     if (!token) {
       console.error('[CSRF] No token in response');
       throw new Error('No CSRF token in response');
     }
-
     console.log('[CSRF] Successfully obtained new CSRF token');
     csrfToken = token;
     return token;
@@ -113,7 +106,6 @@ export const fetchWithCSRF = async (url: string, options: RequestInit = {}): Pro
     // Always get a fresh token for POST, PUT, DELETE requests
     const method = options.method?.toUpperCase() || 'GET';
     const needsCSRF = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method);
-    
     let token = csrfToken;
     if (needsCSRF) {
       try {
@@ -123,38 +115,18 @@ export const fetchWithCSRF = async (url: string, options: RequestInit = {}): Pro
         throw error;
       }
     }
-    
     const headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
       ...(needsCSRF && token ? { 'X-CSRFToken': token } : {}),
       ...options.headers,
     };
-
-    console.log(`[CSRF] Making ${method} request to ${url} with CSRF token:`, needsCSRF ? 'Yes' : 'No');
-    const response = await fetch(url, {
+    // Use fetchApi for the request
+    return fetchApi(url, {
       ...options,
       credentials: 'include',
       headers,
     });
-    
-    // If we get a 403 Forbidden, it might be due to an invalid CSRF token
-    if (response.status === 403) {
-      console.log('[CSRF] Received 403 Forbidden, clearing CSRF token and retrying...');
-      clearCSRFToken();
-      try {
-      const newToken = await getCSRFToken();
-      if (newToken) {
-          console.log('[CSRF] Retrying request with new CSRF token');
-        return fetchWithCSRF(url, options);
-        }
-      } catch (error) {
-        console.error('[CSRF] Failed to get new CSRF token for retry:', error);
-        throw error;
-      }
-    }
-    
-    return response;
   } catch (error) {
     console.error('[CSRF] Error in fetchWithCSRF:', error);
     throw error;

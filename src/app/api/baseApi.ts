@@ -1,4 +1,4 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+// DEPRECATED: All RTK Query usage removed. Use fetchApi and API_ENDPOINTS instead.
 
 // Function to get CSRF token from cookies
 function getCSRFToken() {

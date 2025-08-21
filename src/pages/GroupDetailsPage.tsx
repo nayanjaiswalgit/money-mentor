@@ -1,32 +1,27 @@
-import React, { useEffect, useState } from 'react';
-import { groupApi } from '../services/groupApi';
+// TODO: Refactor this page to use useApiQuery/useApiMutation and API_ENDPOINTS for all group details-related API calls. Remove all usage of groupApi.
+
+import React from 'react';
 import ExpenseForm from '../components/group/ExpenseForm';
 import SettlementForm from '../components/group/SettlementForm';
 import GroupBalanceSheet from '../components/group/GroupBalanceSheet';
 import GroupHistoryLog from '../components/group/GroupHistoryLog';
+import { useApiQuery } from '../hooks/useApiQuery';
 
 interface GroupDetailsPageProps {
   groupId: string;
 }
 
 export default function GroupDetailsPage({ groupId }: GroupDetailsPageProps) {
-  const [expenses, setExpenses] = useState<any[]>([]);
-  const [settlements, setSettlements] = useState<any[]>([]);
-  const [balances, setBalances] = useState<any>({});
-  const [history, setHistory] = useState<any[]>([]);
-
-  useEffect(() => {
-    groupApi.getExpenses(groupId).then((data) => setExpenses(Array.isArray(data) ? data : []));
-    groupApi.getSettlements(groupId).then((data) => setSettlements(Array.isArray(data) ? data : []));
-    groupApi.getBalances(groupId).then((data) => setBalances(data || {}));
-    groupApi.getHistory(groupId).then((data) => setHistory(Array.isArray(data) ? data : []));
-  }, [groupId]);
+  const { data: expenses = [] } = useApiQuery<any[]>(['groupExpenses', groupId], `/groups/${groupId}/expenses`);
+  const { data: settlements = [] } = useApiQuery<any[]>(['groupSettlements', groupId], `/groups/${groupId}/settlements`);
+  const { data: balances = {} } = useApiQuery<any>(['groupBalances', groupId], `/groups/${groupId}/balances`);
+  const { data: history = [] } = useApiQuery<any[]>(['groupHistory', groupId], `/groups/${groupId}/history`);
 
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-bold">Group Details</h1>
-      <ExpenseForm groupId={groupId} onExpenseAdded={() => groupApi.getExpenses(groupId).then((data) => setExpenses(Array.isArray(data) ? data : []))} />
-      <SettlementForm groupId={groupId} onSettlementAdded={() => groupApi.getSettlements(groupId).then((data) => setSettlements(Array.isArray(data) ? data : []))} />
+      <ExpenseForm groupId={groupId} onExpenseAdded={() => {}} />
+      <SettlementForm groupId={groupId} onSettlementAdded={() => {}} />
       <GroupBalanceSheet balances={balances} />
       <GroupHistoryLog history={history} />
       {/* Expenses List */}

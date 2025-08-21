@@ -1,10 +1,1 @@
-import apiSlice from "../apiSlice";
-
-export const transactionsApi = apiSlice.injectEndpoints({
-  endpoints: (builder) => ({
-    getTransactions: builder.query({
-      query: () => "/fintrack/transactions/",
-    }),
-  }),
-});
-export const { useGetTransactionsQuery } = transactionsApi;
+// DEPRECATED: All RTK Query usage removed. Use fetchApi and API_ENDPOINTS instead.

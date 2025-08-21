@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { FormField } from '../ui/forms/FormField';
 import styles from '../ui/forms/formStyles.module.css';
-import { groupApi } from '../../services/groupApi';
+import { useApiQuery } from '../../hooks/useApiQuery';
+import { useApiMutation } from '../../hooks/useApiMutation';
+import { API_ENDPOINTS } from '../../constants/apiEndpoints';
 
 interface User {
   id: string;
@@ -40,23 +42,9 @@ export default function ExpenseForm({ groupId, onExpenseAdded }: ExpenseFormProp
   const [splits, setSplits] = useState<SplitInput[]>([]);
   const [errors, setErrors] = useState<ExpenseFormErrors>({});
   const [backendError, setBackendError] = useState<string | null>(null);
-  const [members, setMembers] = useState<User[]>([]);
-
-  useEffect(() => {
-    // Fetch group members for split assignment
-    (async () => {
-      try {
-        // Assume groupApi.getGroupMembers exists or use a direct fetch
-        const res = await fetch(`/groups/${groupId}/members/`);
-        if (res.ok) {
-          const data = await res.json();
-          setMembers(data);
-        }
-      } catch {
-        setMembers([]);
-      }
-    })();
-  }, [groupId]);
+  const { data: members = [] } = useApiQuery<User[]>(['groupMembers', groupId], API_ENDPOINTS.GROUP_MEMBERS(groupId));
+  const addExpenseMutation = useApiMutation<{ id: string }>(`/groups/${groupId}/expenses`, 'POST');
+  const splitExpenseMutation = useApiMutation(`/groups/${groupId}/split`, 'POST');
 
   useEffect(() => {
     // Reset splits when splitType changes
@@ -97,10 +85,9 @@ export default function ExpenseForm({ groupId, onExpenseAdded }: ExpenseFormProp
     setBackendError(null);
     setErrors({});
     try {
-      const expense = await groupApi.addExpense(groupId, values) as { id: string };
+      const expense = await addExpenseMutation.mutateAsync(values);
       if (splits.length > 0 && splitType === 'custom') {
-        // Only send splits where amount or percentage is set
-        await groupApi.splitExpense(groupId, expense.id, splits.filter(s => s.amount || s.percentage));
+        await splitExpenseMutation.mutateAsync({ expenseId: expense.id, splits: splits.filter(s => s.amount || s.percentage) });
       }
       setValues({ description: '', amount: '', date: '' });
       setSplits([]);

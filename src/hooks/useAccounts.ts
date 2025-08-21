@@ -1,26 +1,21 @@
-import api, { accountAPI } from '../services/api';
-import { useQueryWrapper } from './useQueryWrapper';
+import { useApiQuery } from './useApiQuery';
+import { API_ENDPOINTS } from '../constants/apiEndpoints';
 import { Account } from '../types';
+import { UseQueryOptions } from '@tanstack/react-query';
 
-export const useAccounts = (options = {}) => {
-  return useQueryWrapper<Account[]>({
-    queryKey: ['accounts'],
-    queryFn: async () => {
-      const response = await accountAPI.getAccounts();
-      return response.data.results; // Assuming API returns data in .results
-    },
-    ...options,
-  });
+export const useAccounts = (options?: Omit<UseQueryOptions<Account[]>, 'queryKey' | 'queryFn'>) => {
+  return useApiQuery<Account[]>(
+    'accounts',
+    API_ENDPOINTS.ACCOUNTS,
+    options
+  );
 };
 
-export const useAccount = (id: string, options = {}) => {
-  return useQueryWrapper<Account>({
-    queryKey: ['accounts', id],
-    queryFn: async () => {
-      const response = await accountAPI.getAccountById(id);
-      return response.data; // Assuming API returns data directly
-    },
-    enabled: !!id, // Only run the query if we have an ID
-    ...options,
-  });
+export const useAccount = (id: string, options?: Omit<UseQueryOptions<Account>, 'queryKey' | 'queryFn'>) => {
+  const mergedOptions = { ...(options || {}), enabled: !!id && (options?.enabled ?? true) };
+  return useApiQuery<Account>(
+    ['accounts', id],
+    `${API_ENDPOINTS.ACCOUNTS}/${id}`,
+    mergedOptions
+  );
 }; 

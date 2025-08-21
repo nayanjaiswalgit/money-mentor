@@ -1,28 +1,15 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { transactionAPI } from '../services/api';
+// TODO: Refactor this hook to use useApiQuery/useApiMutation and API_ENDPOINTS for all income-related API calls. Remove all usage of api and transactionAPI.
+
+import { useApiQuery } from './useApiQuery';
+import { useApiMutation } from './useApiMutation';
+import { API_ENDPOINTS } from '../constants/apiEndpoints';
 
 export function useIncomes() {
-  return useQuery({ 
-    queryKey: ['incomes'], 
-    queryFn: async () => {
-      const response = await transactionAPI.getTransactions({ type: 'income' });
-      return response.data.results; 
-    }
-  });
+  const incomesQuery = useApiQuery('incomes', `${API_ENDPOINTS.TRANSACTIONS}?type=income`);
+  const createIncome = useApiMutation(API_ENDPOINTS.TRANSACTIONS, 'POST');
+  return { incomesQuery, createIncome };
 }
 
-export function useCreateIncome() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (data: any) => transactionAPI.createTransaction({ ...data, type: 'income' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['incomes'] })
-  });
-}
-
-export function useUpdateIncome() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, ...data }: any) => transactionAPI.updateTransaction(id, { ...data, type: 'income' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['incomes'] })
-  });
+export function useUpdateIncome(id: string) {
+  return useApiMutation(`${API_ENDPOINTS.TRANSACTIONS}/${id}`, 'PUT');
 }

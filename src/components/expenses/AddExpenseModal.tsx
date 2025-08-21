@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { Transaction, Account } from '../../types';
-import api, { accountAPI, transactionAPI } from '../../services/api';
+import { useAccounts } from '../../hooks/useAccounts';
+import { useApiMutation } from '../../hooks/useApiMutation';
+import { API_ENDPOINTS } from '../../constants/apiEndpoints';
 
 interface AddExpenseModalProps {
   onClose: () => void;
@@ -12,34 +14,21 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onClose, onAdd
   const [form, setForm] = useState<Omit<Transaction, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>({
     accountId: initialValues?.accountId || '',
     amount: initialValues?.amount || 0,
-    type: initialValues?.type || 'expense', // Explicitly type as 'expense' or 'income'
+    type: initialValues?.type || 'expense',
     category: initialValues?.category || '',
     description: initialValues?.description || '',
     date: initialValues?.date || new Date().toISOString().slice(0, 10),
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-
-  useEffect(() => {
-    const fetchAccounts = async () => {
-      try {
-        const response = await accountAPI.getAccounts();
-        setAccounts(response.data.results || []);
-      } catch (err) {
-        console.error('Failed to fetch accounts:', err);
-        setError('Failed to load accounts.');
-      }
-    };
-    fetchAccounts();
-  }, []);
+  const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
+  const mutation = useApiMutation<Transaction>(API_ENDPOINTS.TRANSACTIONS);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (name === 'amount') {
       setForm((prev) => ({ ...prev, [name]: parseFloat(value) }));
     } else if (name === 'type') {
-      // Explicitly cast the value to the correct union type
       setForm((prev) => ({ ...prev, [name]: value as 'income' | 'expense' }));
     } else {
       setForm((prev) => ({ ...prev, [name]: value }));
@@ -51,9 +40,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onClose, onAdd
     setLoading(true);
     setError(null);
     try {
-      // For adding/updating expenses, ensure type is 'expense'
-      const expensePayload = { ...form, type: 'expense' as 'expense' };
-      await onAdd(expensePayload);
+      await mutation.mutateAsync({ ...form, type: 'expense' });
       onClose();
     } catch (err: any) {
       setError(err.message || 'Failed to save expense.');
@@ -69,7 +56,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({ onClose, onAdd
           className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
           onClick={onClose}
         >
-          ×
+          &times;
         </button>
         <h2 className="text-xl font-bold mb-4">{initialValues ? 'Edit Expense' : 'Add Expense'}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">

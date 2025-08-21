@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Users, Plus, DollarSign } from 'lucide-react';
-import { groupApi } from '../services/groupApi';
+import { useApiQuery } from '../hooks/useApiQuery';
+import { useApiMutation } from '../hooks/useApiMutation';
+import { API_ENDPOINTS } from '../constants/apiEndpoints';
 
 // Group type for TypeScript
 interface Group {
@@ -15,37 +17,23 @@ interface Group {
 }
 
 export function GroupsPage() {
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupDescription, setNewGroupDescription] = useState('');
   const [memberEmails, setMemberEmails] = useState<string[]>(['']);
 
-  // Fetch groups from API
-  useEffect(() => {
-    setIsLoading(true);
-    setError(null);
-    groupApi.getGroups()
-      .then((data) => {
-        setGroups(Array.isArray(data) ? data : []);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        setError('Failed to load groups');
-        setIsLoading(false);
-      });
-  }, []);
+  const { data: groups = [], isLoading, error, refetch } = useApiQuery<Group[]>(
+    'groups',
+    '/groups'
+  );
+  const createGroupMutation = useApiMutation<Group>('/groups', 'POST');
 
   // Handle group creation
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGroupName.trim()) return;
-    setIsLoading(true);
-    setError(null);
     try {
-      await groupApi.createGroup({
+      await createGroupMutation.mutateAsync({
         name: newGroupName,
         description: newGroupDescription,
         members: memberEmails.filter(Boolean).map(email => ({ email })),
@@ -54,12 +42,9 @@ export function GroupsPage() {
       setNewGroupName('');
       setNewGroupDescription('');
       setMemberEmails(['']);
-      const data = await groupApi.getGroups();
-      setGroups(Array.isArray(data) ? data : []);
-      setIsLoading(false);
+      refetch();
     } catch (err: any) {
-      setError('Failed to create group');
-      setIsLoading(false);
+      // Optionally handle error
     }
   };
 
@@ -79,7 +64,7 @@ export function GroupsPage() {
       {isLoading ? (
         <div className="text-gray-500">Loading groups...</div>
       ) : error ? (
-        <div className="text-red-600">{error}</div>
+        <div className="text-red-600">{String(error)}</div>
       ) : groups.length === 0 ? (
         <div className="text-gray-500">No groups found. Create your first group!</div>
       ) : (

@@ -1,9 +1,15 @@
 import { Fragment } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectAuthUser } from '../../features/auth/authSlice';
+import { logout } from '../../features/auth/authSlice';
+import type { AppDispatch } from '../../app/store';
 
 export const Navigation = () => {
-  const { user, logout, hasRole, hasFeature } = useAuth();
+  const user = useSelector(selectAuthUser);
+  const dispatch: AppDispatch = useDispatch();
+  const hasRole = (role: string) => user && user.role === role;
+  const hasFeature = (feature: string) => user && user.features && user.features.includes(feature);
 
   return (
     <nav className="bg-white shadow">
@@ -77,7 +83,13 @@ export const Navigation = () => {
                   </button>
                 </div>
                 <button
-                  onClick={logout}
+                  onClick={async () => {
+                    try {
+                      await dispatch(logout()).unwrap();
+                    } catch (error: any) {
+                      console.error('Logout failed:', error?.message || error);
+                    }
+                  }}
                   className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
                 >
                   Logout

@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { Transaction, Account } from '../../types';
-import api, { accountAPI } from '../../services/api';
+import { useAccounts } from '../../hooks/useAccounts';
+import { useApiMutation } from '../../hooks/useApiMutation';
+import { API_ENDPOINTS } from '../../constants/apiEndpoints';
 
 interface AddTransactionModalProps {
   onClose: () => void;
@@ -20,20 +22,8 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ onClos
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-
-  useEffect(() => {
-    const fetchAccounts = async () => {
-      try {
-        const response = await accountAPI.getAccounts();
-        setAccounts(response.data.results || []);
-      } catch (err) {
-        console.error('Failed to fetch accounts:', err);
-        setError('Failed to load accounts.');
-      }
-    };
-    fetchAccounts();
-  }, []);
+  const { data: accounts = [], isLoading: accountsLoading } = useAccounts();
+  const mutation = useApiMutation<Transaction>(API_ENDPOINTS.TRANSACTIONS);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -51,7 +41,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ onClos
     setLoading(true);
     setError(null);
     try {
-      await onSubmit(form);
+      await mutation.mutateAsync(form);
       onClose();
     } catch (err: any) {
       setError(err.message || 'Failed to save transaction.');
@@ -67,7 +57,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ onClos
           className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
           onClick={onClose}
         >
-          ×
+          &times;
         </button>
         <h2 className="text-xl font-bold mb-4">{initialValues ? 'Edit Transaction' : 'Add Transaction'}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">

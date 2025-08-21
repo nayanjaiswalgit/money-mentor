@@ -1,7 +1,7 @@
 import { Subscription, User } from '../types/auth';
 import { authService } from './auth.service';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+import { fetchApi } from './apiClient';
+import { API_ENDPOINTS } from '../constants/apiEndpoints';
 
 class SubscriptionService {
   async getCurrentSubscription(): Promise<Subscription | null> {
@@ -12,20 +12,14 @@ class SubscriptionService {
 
   async upgradeSubscription(planId: string): Promise<Subscription> {
     try {
-      const response = await fetch(`${API_URL}/subscriptions/upgrade`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authService.getToken()}`,
-        },
-        body: JSON.stringify({ planId }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upgrade subscription');
-      }
-
-      const subscription: Subscription = await response.json();
+      const subscription: Subscription = await fetchApi(
+        API_ENDPOINTS.SUBSCRIPTION_UPGRADE,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ planId }),
+        }
+      );
       return subscription;
     } catch (error) {
       throw new Error('Failed to upgrade subscription');
@@ -34,16 +28,12 @@ class SubscriptionService {
 
   async cancelSubscription(): Promise<void> {
     try {
-      const response = await fetch(`${API_URL}/subscriptions/cancel`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authService.getToken()}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to cancel subscription');
-      }
+      await fetchApi(
+        API_ENDPOINTS.SUBSCRIPTION_CANCEL,
+        {
+          method: 'POST',
+        }
+      );
     } catch (error) {
       throw new Error('Failed to cancel subscription');
     }
@@ -67,17 +57,8 @@ class SubscriptionService {
     interval: 'monthly' | 'yearly';
   }>> {
     try {
-      const response = await fetch(`${API_URL}/subscriptions/plans`, {
-        headers: {
-          'Authorization': `Bearer ${authService.getToken()}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch subscription plans');
-      }
-
-      return await response.json();
+      const plans = await fetchApi(API_ENDPOINTS.SUBSCRIPTION_PLANS);
+      return plans;
     } catch (error) {
       throw new Error('Failed to fetch subscription plans');
     }

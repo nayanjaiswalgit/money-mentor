@@ -16,6 +16,7 @@ interface FormFieldProps {
   className?: string;
   disabled?: boolean;
   autoComplete?: string;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
 }
 
 export function FormField({
@@ -33,36 +34,46 @@ export function FormField({
   className = '',
   disabled = false,
   autoComplete,
+  onBlur,
 }: FormFieldProps) {
   return (
     <div className={className}>
-      <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
+      <label htmlFor={id} className="block text-xs font-medium text-gray-500">
         {label}
       </label>
-      <div className="relative rounded-md shadow-sm">
+      <div className="relative mt-1">
         {Icon && (
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center">
             <Icon className="h-5 w-5 text-gray-400" />
           </div>
         )}
         <input
           type={type}
           id={id}
+          name={id}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 ${
-            Icon ? 'pl-10' : ''
-          } ${error ? 'border-red-300' : ''} ${disabled ? 'bg-gray-100' : ''}`}
+          className={`
+            block w-full border-0 border-b bg-transparent py-1.5 sm:text-sm sm:leading-6 transition-colors duration-200
+            focus:ring-0 focus:outline-none
+            ${Icon ? 'pl-7' : 'pl-0'}
+            ${disabled ? 'text-gray-500' : 'text-gray-900'}
+            ${error 
+              ? 'border-red-500' 
+              : 'border-gray-300 hover:border-gray-400 focus:border-indigo-500'
+            }
+          `}
           placeholder={placeholder}
           required={required}
           pattern={pattern}
           maxLength={maxLength}
           disabled={disabled}
           autoComplete={autoComplete}
+          onBlur={onBlur}
         />
       </div>
       {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
+        <p className="mt-1 text-xs text-red-600">{error}</p>
       )}
     </div>
   );

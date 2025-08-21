@@ -1,11 +1,4 @@
-import apiSlice from '../apiSlice';
-
-interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
+// DEPRECATED: All RTK Query usage removed. Use fetchApi and API_ENDPOINTS instead.
 
 export interface Account {
   id: string;

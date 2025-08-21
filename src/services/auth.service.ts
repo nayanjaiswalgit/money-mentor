@@ -1,9 +1,10 @@
 import Cookies from 'js-cookie';
 import { jwtDecode } from 'jwt-decode';
 import { AuthResponse, LoginCredentials, RegisterData, User } from '../types/auth';
+import { fetchApi } from './apiClient';
+import { API_ENDPOINTS } from '../constants/apiEndpoints';
 
 const TOKEN_KEY = 'auth_token';
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 class AuthService {
   private token: string | null = null;
@@ -14,19 +15,15 @@ class AuthService {
 
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const data: AuthResponse = await fetchApi(
+        API_ENDPOINTS.LOGIN,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(credentials),
         },
-        body: JSON.stringify(credentials),
-      });
-
-      if (!response.ok) {
-        throw new Error('Login failed');
-      }
-
-      const data: AuthResponse = await response.json();
+        false // login does not require auth
+      );
       this.setToken(data.token);
       return data;
     } catch (error) {
@@ -36,19 +33,15 @@ class AuthService {
 
   async register(data: RegisterData): Promise<AuthResponse> {
     try {
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const authData: AuthResponse = await fetchApi(
+        API_ENDPOINTS.REGISTER,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
         },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error('Registration failed');
-      }
-
-      const authData: AuthResponse = await response.json();
+        false // register does not require auth
+      );
       this.setToken(authData.token);
       return authData;
     } catch (error) {
